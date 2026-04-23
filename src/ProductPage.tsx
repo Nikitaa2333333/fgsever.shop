@@ -163,6 +163,13 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
               {product.title}
             </h1>
 
+            {/* Description / Compatibility directly under title */}
+            {product.description && (
+              <div className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-line border-l-4 border-blue-100 pl-4 py-1">
+                {product.description}
+              </div>
+            )}
+
             {/* Price + stock */}
             <div className="flex items-end gap-4">
               <span className="font-oswald font-semibold text-3xl text-slate-900 tracking-tight">
@@ -209,17 +216,6 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
               </div>
             )}
 
-            {/* Description / Commentary */}
-            {product.description && (
-              <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-100">
-                  <h3 className="font-semibold text-slate-900 text-[14px] uppercase tracking-wide">Описание и применяемость</h3>
-                </div>
-                <div className="p-6 text-base md:text-lg text-slate-700 leading-relaxed whitespace-pre-line font-medium">
-                  {product.description}
-                </div>
-              </div>
-            )}
 
             {/* Cross-numbers */}
             {product.crossNumbers && product.crossNumbers.length > 0 && (
