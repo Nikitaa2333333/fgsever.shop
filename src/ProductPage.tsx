@@ -38,10 +38,37 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
     product.condition && { label: 'Состояние', value: product.condition, icon: <Tag size={15} /> },
     product.model && { label: 'Модель', value: `${product.brand} ${product.model}`, icon: <Car size={15} /> },
     product.year && { label: 'Год', value: product.year, icon: <Gauge size={15} /> },
-    product.color && { label: 'Цвет', value: product.color, icon: <Palette size={15} /> },
+    product.color && { 
+      label: 'Цвет', 
+      value: product.color, 
+      icon: <Palette size={15} />,
+      colorCircle: true 
+    },
     product.engine && { label: 'Двигатель', value: product.engine, icon: <Wrench size={15} /> },
     product.body && { label: 'Кузов', value: product.body, icon: <Car size={15} /> },
-  ].filter(Boolean) as { label: string; value: string; icon: React.ReactNode }[];
+  ].filter(Boolean) as any[];
+
+  const getColorHex = (colorName: string) => {
+    const colors: Record<string, string> = {
+      'черный': '#000000',
+      'белый': '#ffffff',
+      'серый': '#808080',
+      'серебристый': '#C0C0C0',
+      'синий': '#1e40af',
+      'красный': '#ef4444',
+      'зеленый': '#10b981',
+      'коричневый': '#78350f',
+      'бежевый': '#f5f5dc',
+      'желтый': '#facc15',
+      'голубой': '#60a5fa',
+      'золотистый': '#fbbf24',
+      'фиолетовый': '#8b5cf6',
+      'темно-синий': '#1e3a8a',
+      'темно-серый': '#374151',
+    };
+    const key = colorName.toLowerCase().trim();
+    return colors[key] || null;
+  };
 
   return (
     <div className="flex-1 pb-24">
@@ -170,7 +197,15 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                         <span className="text-slate-400 shrink-0">{row.icon}</span>
                         {row.label}
                       </div>
-                      <span className="text-slate-800 font-medium">{row.value}</span>
+                      <div className="flex items-center gap-2">
+                        {row.colorCircle && getColorHex(row.value) && (
+                          <span 
+                            className="w-3.5 h-3.5 rounded-full border border-slate-200 shadow-sm" 
+                            style={{ backgroundColor: getColorHex(row.value) || undefined }}
+                          />
+                        )}
+                        <span className="text-slate-800 font-medium">{row.value}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -216,7 +251,15 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                   ].filter(([, v]) => v).map(([label, value], idx) => (
                     <div key={idx} className={`flex items-center gap-4 px-5 py-3 hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'border-r border-slate-100' : ''}`}>
                       <span className="text-slate-500 whitespace-nowrap shrink-0">{label}</span>
-                      <span className="text-slate-800 font-semibold">{value}</span>
+                      <div className="flex items-center gap-2">
+                        {label.includes('Цвет') && getColorHex(String(value)) && (
+                          <span 
+                            className="w-3.5 h-3.5 rounded-full border border-slate-200 shadow-sm" 
+                            style={{ backgroundColor: getColorHex(String(value)) || undefined }}
+                          />
+                        )}
+                        <span className="text-slate-800 font-semibold">{value}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
