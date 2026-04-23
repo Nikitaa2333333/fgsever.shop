@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-bebas: "Bebas Neue", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-primary: #1C88FF;
+  --color-secondary: #0F172A;
+  --color-dark: #111111;
+  --color-accent: #E11D48;
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased text-gray-900 bg-gray-50;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bebas tracking-wide;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}
