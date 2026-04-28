@@ -61,8 +61,8 @@ const insertCarStmt = db.prepare(`
 `);
 
 const insertProductStmt = db.prepare(`
-  INSERT INTO products (sku, title, donorId, brand, model, year, body, engine, positionRaw_fb, positionRaw_lr, positionRaw_ud, position, color, oem, crossNumbers, manufacturer, description, photos, imageUrl, conditionRaw, condition, isNew, price, priceFormatted, warehouse, outOfStock, categoryId, subCategory)
-  VALUES (@sku, @title, @donorId, @brand, @model, @year, @body, @engine, @positionRaw_fb, @positionRaw_lr, @positionRaw_ud, @position, @color, @oem, @crossNumbers, @manufacturer, @description, @photos, @imageUrl, @conditionRaw, @condition, @isNew, @price, @priceFormatted, @warehouse, @outOfStock, @categoryId, @subCategory)
+  INSERT INTO products (sku, title, titleSearch, donorId, brand, model, year, body, engine, positionRaw_fb, positionRaw_lr, positionRaw_ud, position, color, oem, crossNumbers, manufacturer, description, photos, imageUrl, conditionRaw, condition, isNew, price, priceFormatted, warehouse, outOfStock, categoryId, subCategory)
+  VALUES (@sku, @title, @titleSearch, @donorId, @brand, @model, @year, @body, @engine, @positionRaw_fb, @positionRaw_lr, @positionRaw_ud, @position, @color, @oem, @crossNumbers, @manufacturer, @description, @photos, @imageUrl, @conditionRaw, @condition, @isNew, @price, @priceFormatted, @warehouse, @outOfStock, @categoryId, @subCategory)
 `);
 
 const clearCarsStmt = db.prepare('DELETE FROM cars');
@@ -117,6 +117,7 @@ const updateDatabaseTx = db.transaction((carsRecords, productsRecords) => {
     insertProductStmt.run({
       sku: r['Артикул'] || '',
       title: title,
+      titleSearch: title.toLowerCase(),
       donorId: r['Донор'] || '',
       brand: r['Марка'] || '',
       model: r['Модель'] || '',
@@ -226,7 +227,8 @@ app.get('/api/products', (req, res) => {
 
   if (q) {
     const term = `%${q.toLowerCase()}%`;
-    query += ' AND (LOWER(title) LIKE ? OR LOWER(sku) LIKE ? OR LOWER(oem) LIKE ? OR LOWER(crossNumbers) LIKE ?)';
+    // titleSearch хранит title.toLowerCase() — SQLite LOWER() не понижает кириллицу
+    query += ' AND (titleSearch LIKE ? OR LOWER(sku) LIKE ? OR LOWER(oem) LIKE ? OR LOWER(crossNumbers) LIKE ?)';
     params.push(term, term, term, term);
   }
 

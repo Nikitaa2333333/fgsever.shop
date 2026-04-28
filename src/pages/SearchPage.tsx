@@ -1,0 +1,352 @@
+import React, { useState } from 'react';
+import { ChevronRight, SlidersHorizontal, Grid2x2, List, X, ChevronDown } from 'lucide-react';
+import { useProducts } from '../hooks/useProducts';
+import type { CatalogProduct } from '../data';
+
+const BMW_MODELS = [
+  '1 серия', '2 серия', '3 серия', '4 серия', '5 серия',
+  '6 серия', '7 серия', '8 серия',
+  'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7',
+  'M2', 'M3', 'M4', 'M5', 'M8',
+  'i3', 'i4', 'i7', 'iX', 'Z4',
+];
+
+const CONDITIONS = [
+  { value: 'new', label: 'Новый' },
+  { value: 'used', label: 'Б/У' },
+  { value: 'contract', label: 'Контракт' },
+];
+
+interface SearchPageProps {
+  query: string;
+  onNavigate: (page: string) => void;
+}
+
+export function SearchPage({ query, onNavigate }: SearchPageProps) {
+  const decodedQuery = decodeURIComponent(query);
+
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+  const [sort, setSort] = useState('new');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [modelsOpen, setModelsOpen] = useState(true);
+  const [conditionsOpen, setConditionsOpen] = useState(true);
+
+  const { products: rawProducts, total, loading } = useProducts(undefined, sort, decodedQuery);
+
+  // Клиентская фильтрация по модели и состоянию
+  const products: CatalogProduct[] = rawProducts.filter(p => {
+    const matchModel =
+      selectedModels.length === 0 ||
+      selectedModels.some(m => p.model.includes(m.replace(' серия', '')));
+    const matchCond =
+      selectedConditions.length === 0 ||
+      selectedConditions.includes(p.conditionRaw);
+    return matchModel && matchCond;
+  });
+
+  const toggleModel = (model: string) =>
+    setSelectedModels(prev =>
+      prev.includes(model) ? prev.filter(m => m !== model) : [...prev, model]
+    );
+
+  const toggleCondition = (cond: string) =>
+    setSelectedConditions(prev =>
+      prev.includes(cond) ? prev.filter(c => c !== cond) : [...prev, cond]
+    );
+
+  return (
+    <div className="flex-1 pb-24">
+      {/* Breadcrumbs */}
+      <div className="border-b border-slate-100 bg-white overflow-x-auto">
+        <div className="w-full px-4 md:px-10 py-3.5 min-w-max">
+          <nav className="flex items-center gap-2 text-[13px] text-slate-400">
+            <button
+              onClick={() => onNavigate('home')}
+              className="hover:text-blue-600 transition-colors"
+            >
+              Главная
+            </button>
+            <ChevronRight size={13} className="opacity-50" />
+            <span className="text-slate-700 font-semibold">
+              Поиск: «{decodedQuery}»
+            </span>
+          </nav>
+        </div>
+      </div>
+
+      <div className="w-full px-4 md:px-10 pt-6 md:pt-10">
+        <h1 className="font-oswald font-semibold text-4xl md:text-6xl text-slate-900 mb-2 tracking-tight">
+          Результаты поиска
+        </h1>
+        <p className="text-slate-400 text-sm mb-8">
+          По запросу «{decodedQuery}»
+        </p>
+
+        <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start">
+          {/* ── Sidebar ── */}
+          <aside className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-4">
+
+            {/* Фильтр по серии BMW */}
+            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+              <button
+                onClick={() => setModelsOpen(v => !v)}
+                className="w-full flex items-center justify-between px-6 py-4 font-semibold text-[15px] text-slate-800 hover:bg-slate-50 transition-colors"
+              >
+                Серия BMW
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform duration-300 opacity-50 ${modelsOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {modelsOpen && (
+                <div className="border-t border-slate-100 px-5 py-4 flex flex-col gap-2.5 max-h-72 overflow-y-auto">
+                  {BMW_MODELS.map(model => (
+                    <label key={model} className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={selectedModels.includes(model)}
+                        onChange={() => toggleModel(model)}
+                        className="w-4 h-4 rounded border-slate-300 accent-blue-600 cursor-pointer"
+                      />
+                      <span className="text-[13px] text-slate-600 group-hover:text-blue-600 transition-colors select-none">
+                        {model}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {selectedModels.length > 0 && (
+                <div className="border-t border-slate-100 px-5 py-3 flex flex-wrap gap-2">
+                  {selectedModels.map(m => (
+                    <span
+                      key={m}
+                      className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-[12px] font-semibold px-3 py-1 rounded-full"
+                    >
+                      {m}
+                      <button onClick={() => toggleModel(m)} className="hover:text-blue-900 transition-colors">
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    onClick={() => setSelectedModels([])}
+                    className="text-[12px] text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    Сбросить
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Фильтр по состоянию */}
+            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+              <button
+                onClick={() => setConditionsOpen(v => !v)}
+                className="w-full flex items-center justify-between px-6 py-4 font-semibold text-[15px] text-slate-800 hover:bg-slate-50 transition-colors"
+              >
+                Состояние
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform duration-300 opacity-50 ${conditionsOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {conditionsOpen && (
+                <div className="border-t border-slate-100 px-5 py-4 flex flex-col gap-2.5">
+                  {CONDITIONS.map(({ value, label }) => (
+                    <label key={value} className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={selectedConditions.includes(value)}
+                        onChange={() => toggleCondition(value)}
+                        className="w-4 h-4 rounded border-slate-300 accent-blue-600 cursor-pointer"
+                      />
+                      <span className="text-[13px] text-slate-600 group-hover:text-blue-600 transition-colors select-none">
+                        {label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </aside>
+
+          {/* ── Основной контент ── */}
+          <div className="flex-1 min-w-0">
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-white rounded-2xl border border-slate-100 px-4 sm:px-6 py-3.5">
+              <div className="flex items-center gap-3 text-[13px] text-slate-500">
+                <SlidersHorizontal size={15} />
+                {loading
+                  ? <span className="font-medium text-slate-400">Загрузка...</span>
+                  : <span className="font-medium text-slate-700">{products.length} товаров</span>
+                }
+              </div>
+
+              <div className="flex items-center justify-between w-full sm:w-auto sm:justify-start gap-4 sm:gap-5">
+                <div className="flex items-center gap-2 text-[13px] text-slate-600">
+                  <span className="hidden sm:inline text-slate-400">Сортировка:</span>
+                  <select
+                    value={sort}
+                    onChange={e => setSort(e.target.value)}
+                    className="border-none bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer text-[13px]"
+                  >
+                    <option value="new">По умолчанию</option>
+                    <option value="price_asc">Цена ↑</option>
+                    <option value="price_desc">Цена ↓</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1 pl-4 border-l border-slate-100">
+                  <button
+                    onClick={() => setView('grid')}
+                    className={`p-2 rounded-lg transition-colors ${view === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-blue-600'}`}
+                  >
+                    <Grid2x2 size={15} />
+                  </button>
+                  <button
+                    onClick={() => setView('list')}
+                    className={`p-2 rounded-lg transition-colors ${view === 'list' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-blue-600'}`}
+                  >
+                    <List size={15} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Товары */}
+            {loading ? (
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-white border border-slate-100 rounded-2xl overflow-hidden animate-pulse">
+                    <div className="aspect-[4/3] bg-slate-100" />
+                    <div className="p-5 flex flex-col gap-3">
+                      <div className="h-3 bg-slate-100 rounded w-1/2" />
+                      <div className="h-5 bg-slate-100 rounded w-3/4" />
+                      <div className="h-7 bg-slate-100 rounded w-1/3 mt-2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center">
+                <p className="text-slate-400 text-base mb-2">Ничего не найдено</p>
+                <p className="text-slate-300 text-sm">
+                  Попробуйте изменить запрос или убрать фильтры
+                </p>
+              </div>
+            ) : view === 'grid' ? (
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-5">
+                {products.map(product => (
+                  <div
+                    key={product.id}
+                    onClick={() => onNavigate(`product-${product.id}`)}
+                    className="bg-white border border-slate-100 rounded-2xl flex flex-col group hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200 hover:-translate-y-1 transition-all relative overflow-hidden cursor-pointer"
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <img
+                        src={product.imageUrl}
+                        alt={product.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                      {product.conditionRaw !== 'contract' && (
+                        <span className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded-full ${
+                          product.conditionRaw === 'new' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-white'
+                        }`}>{product.condition}</span>
+                      )}
+                      {product.position && (
+                        <span className="absolute top-3 right-3 text-[10px] font-semibold bg-white/90 text-slate-700 px-2 py-1 rounded-full">
+                          {product.position}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-5 flex flex-col flex-1">
+                      <span className="text-[10px] text-slate-400 mb-1 font-medium tracking-wide uppercase">
+                        {product.oem}
+                      </span>
+                      <h3 className="font-oswald font-semibold text-base text-slate-900 leading-snug mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                        {product.title}
+                      </h3>
+                      {product.donor && (
+                        <div className="text-[11px] text-slate-500 mb-3 flex flex-col gap-0.5">
+                          <span>{product.donor.brand} {product.donor.model} {product.donor.year} · {product.donor.body}</span>
+                          {product.donor.engine && <span>Двигатель: {product.donor.engine}</span>}
+                          {product.donor.mileage && (
+                            <span>Пробег: {Number(product.donor.mileage).toLocaleString('ru-RU')} км</span>
+                          )}
+                        </div>
+                      )}
+                      <div className="mt-auto">
+                        <span className="text-xl font-oswald font-semibold text-slate-900 tracking-tight">
+                          {product.priceFormatted}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {products.map(product => (
+                  <div
+                    key={product.id}
+                    onClick={() => onNavigate(`product-${product.id}`)}
+                    className="bg-white border border-slate-100 rounded-2xl flex flex-col sm:flex-row gap-4 sm:gap-6 group hover:shadow-lg hover:border-slate-200 transition-all relative overflow-hidden p-4 sm:p-5 cursor-pointer"
+                  >
+                    <div className="relative w-full sm:w-40 h-40 flex-shrink-0 overflow-hidden rounded-xl">
+                      <img
+                        src={product.imageUrl}
+                        alt={product.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                      {product.conditionRaw !== 'contract' && (
+                        <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          product.conditionRaw === 'new' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-white'
+                        }`}>{product.condition}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col flex-1 justify-between py-1 min-w-0">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-[10px] text-slate-400 font-medium tracking-wide uppercase">{product.oem}</span>
+                          {product.position && (
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">
+                              {product.position}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-oswald font-semibold text-lg text-slate-900 leading-snug group-hover:text-blue-600 transition-colors">
+                          {product.title}
+                        </h3>
+                        {product.donor && (
+                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-slate-500">
+                            <span>{product.donor.brand} {product.donor.model} {product.donor.year} · {product.donor.body}</span>
+                            {product.donor.engine && <span>Двс: {product.donor.engine}</span>}
+                            {product.donor.transmission && <span>КПП: {product.donor.transmission}</span>}
+                            {product.donor.mileage && (
+                              <span>Пробег: {Number(product.donor.mileage).toLocaleString('ru-RU')} км</span>
+                            )}
+                            {product.donor.vin && <span className="font-mono">VIN: {product.donor.vin}</span>}
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3">
+                        <span className="text-2xl font-oswald font-semibold text-slate-900 tracking-tight whitespace-nowrap">
+                          {product.priceFormatted}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

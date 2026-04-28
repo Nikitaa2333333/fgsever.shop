@@ -39,6 +39,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sku TEXT,
     title TEXT,
+    titleSearch TEXT, -- title.toLowerCase() — SQLite LOWER() не поддерживает кириллицу
     donorId TEXT,
     brand TEXT,
     model TEXT,
@@ -66,11 +67,12 @@ db.exec(`
     categoryId TEXT,
     subCategory TEXT
   );
-  
+
   -- Индексы для быстрого поиска и фильтрации
   CREATE INDEX IF NOT EXISTS idx_category ON products(categoryId);
   CREATE INDEX IF NOT EXISTS idx_outOfStock ON products(outOfStock);
   CREATE INDEX IF NOT EXISTS idx_donor ON products(donorId);
+  CREATE INDEX IF NOT EXISTS idx_title_search ON products(titleSearch);
 `);
 
 export default db;

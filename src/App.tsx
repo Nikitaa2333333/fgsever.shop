@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, Phone, Menu, X, 
+import {
+  Search, Phone, Menu, X,
   ChevronDown, ShieldCheck, Truck, RefreshCcw,
   Facebook, Instagram, Youtube, Mail, ChevronRight
 } from 'lucide-react';
 import { categories, products, heroSlides, blockLinks } from './data';
 import { CategoryPage } from './CategoryPage';
 import { ProductPage } from './ProductPage';
+import { SearchPage } from './pages/SearchPage';
+import { SearchDropdown } from './components/SearchDropdown';
 import logo from './logo.png';
 
 function App() {
@@ -14,6 +16,8 @@ function App() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeMobileCategory, setActiveMobileCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const getInitialPage = () => {
     if (typeof window === 'undefined') return 'home';
     const path = window.location.pathname.replace(/^\/+/, '');
@@ -71,11 +75,27 @@ function App() {
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
               <Search size={18} />
             </div>
-            <input 
-              type="text" 
-              placeholder="Поиск по номеру детали или названию..." 
+            <input
+              type="text"
+              value={searchQuery}
+              placeholder="Поиск по номеру детали или названию..."
               className="w-full bg-slate-100 text-slate-900 border border-transparent rounded-full py-3 pl-12 pr-6 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all font-sans text-sm"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+              onFocus={() => setSearchOpen(true)}
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  navigate(`search-${encodeURIComponent(searchQuery.trim())}`);
+                  setSearchOpen(false);
+                }
+              }}
             />
+            {searchOpen && (
+              <SearchDropdown
+                query={searchQuery}
+                onNavigate={page => { navigate(page); setSearchQuery(''); setSearchOpen(false); }}
+                onClose={() => setSearchOpen(false)}
+              />
+            )}
           </div>
 
           <div className="flex items-center gap-4 md:gap-6">
@@ -91,7 +111,7 @@ function App() {
           </div>
         </div>
 
-        <div className="hidden lg:block border-t border-slate-100 bg-white relative z-50" onMouseLeave={() => setActiveCategory(null)}>
+        <div className="hidden lg:block border-t border-slate-100 bg-white relative" onMouseLeave={() => setActiveCategory(null)}>
           <div className="w-full mx-auto px-4 md:px-6 relative">
             <nav className="flex space-x-1 items-end overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pt-2 relative z-20">
               {categories.map((cat) => (
@@ -137,8 +157,16 @@ function App() {
               </div>
               <input
                 type="text"
+                value={searchQuery}
                 placeholder="Поиск деталей..."
                 className="w-full bg-slate-100 text-slate-900 border border-transparent rounded-xl py-2 pl-10 pr-4 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10 text-sm"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    navigate(`search-${encodeURIComponent(searchQuery.trim())}`);
+                    setSearchQuery('');
+                  }
+                }}
               />
             </div>
             <ul className="flex flex-col gap-1 max-h-[65vh] overflow-y-auto">
@@ -174,6 +202,8 @@ function App() {
 
       {currentPage.startsWith('product-') ? (
         <ProductPage productId={Number(currentPage.replace('product-', ''))} onNavigate={navigate} />
+      ) : currentPage.startsWith('search-') ? (
+        <SearchPage query={currentPage.replace('search-', '')} onNavigate={navigate} />
       ) : currentPage !== 'home' ? (
         <CategoryPage categoryId={currentPage} onNavigate={navigate} />
       ) : (
