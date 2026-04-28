@@ -18,3 +18,8 @@ partssever-site-carsrc.csv
 
 # Временные файлы
 scratch/
+
+# База данных SQLite (не заливаем в git, создается на сервере)
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
