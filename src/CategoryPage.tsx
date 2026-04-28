@@ -219,7 +219,7 @@ export function CategoryPage({ categoryId, onNavigate }: CategoryPageProps) {
                 {categoryProducts.map(product => (
                   <div key={product.id} onClick={() => onNavigate(`product-${product.id}`)} className="bg-white border border-slate-100 rounded-2xl flex flex-col group hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200 hover:-translate-y-1 transition-all relative overflow-hidden cursor-pointer">
                     <div className="relative aspect-[4/3] overflow-hidden">
-                      <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <img src={product.imageUrl} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                       {product.conditionRaw !== 'contract' && (
                         <span className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded-full ${
                           product.conditionRaw === 'new' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-white'
@@ -257,7 +257,7 @@ export function CategoryPage({ categoryId, onNavigate }: CategoryPageProps) {
                 {categoryProducts.map(product => (
                   <div key={product.id} onClick={() => onNavigate(`product-${product.id}`)} className="bg-white border border-slate-100 rounded-2xl flex flex-col sm:flex-row gap-4 sm:gap-6 group hover:shadow-lg hover:border-slate-200 transition-all relative overflow-hidden p-4 sm:p-5 cursor-pointer">
                     <div className="relative w-full sm:w-40 h-40 flex-shrink-0 overflow-hidden rounded-xl">
-                      <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <img src={product.imageUrl} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                       {product.conditionRaw !== 'contract' && (
                         <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           product.conditionRaw === 'new' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-white'

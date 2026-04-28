@@ -5,6 +5,19 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 
+const EXPORTS = [
+  { url: 'https://baz-on.ru/export/c3677/07d7c/partssever-site-products.csv', file: 'partssever-site-products.csv' },
+  { url: 'https://baz-on.ru/export/c3677/7c88b/partssever-site-carsrc.csv',   file: 'partssever-site-carsrc.csv' },
+];
+
+console.log('⬇ Скачиваю свежие CSV с Bazon...');
+for (const { url, file } of EXPORTS) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Ошибка загрузки ${file}: ${res.status}`);
+  writeFileSync(join(root, file), Buffer.from(await res.arrayBuffer()));
+  console.log(`  ✓ ${file}`);
+}
+
 function decode1251(buffer) {
   return new TextDecoder('windows-1251').decode(buffer);
 }
@@ -178,10 +191,10 @@ const products = productsRaw.map((r, idx) => {
 // Catalog — listing view (with photo)
 const catalog = products
   .filter(p => p.imageUrl)
-  .map(({ id, sku, title, brand, model, year, body, engine, imageUrl, color,
+  .map(({ id, sku, title, brand, model, year, body, engine, imageUrl, photos, color,
           conditionRaw, condition, isNew, price, priceFormatted, outOfStock,
           categoryId, donorId, oem, position, donor, description }) =>
-    ({ id, sku, title, brand, model, year, body, engine, imageUrl, color,
+    ({ id, sku, title, brand, model, year, body, engine, imageUrl, photos, color,
        conditionRaw, condition, isNew, price, priceFormatted, outOfStock,
        categoryId, donorId, oem, position, donor, description })
   );

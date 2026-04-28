@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
-  ChevronRight, ShoppingCart,
-  Tag, Gauge, Palette, Wrench, Car, Hash,
+  ChevronRight,
+  Tag, Gauge, Palette, Hash,
   ChevronLeft, ChevronRight as ChevronRightIcon
 } from 'lucide-react';
 import { allProducts, categories, type CatalogProduct } from './data';
@@ -25,8 +25,10 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
 
   const category = categories.find(c => c.id === product.categoryId);
 
-  // Collect all images (main + extras from donor if available)
-  const images = [product.imageUrl].filter(Boolean);
+  // Все фото товара из Базон (до 25 штук)
+  const images = product.photos && product.photos.length > 0
+    ? product.photos
+    : [product.imageUrl].filter(Boolean);
 
   // Related products: same category, different id, with image
   const related = allProducts
@@ -105,6 +107,8 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                 <img
                   src={images[activeImage]}
                   alt={product.title}
+                  loading="eager"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -147,7 +151,7 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                       idx === activeImage ? 'border-blue-600' : 'border-transparent hover:border-slate-300'
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -177,16 +181,7 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
               </span>
             </div>
 
-            {/* Buy button */}
-            <div className="flex">
-              <button
-                disabled={product.outOfStock}
-                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-semibold py-4 px-8 rounded-2xl transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0 text-[15px]"
-              >
-                <ShoppingCart size={18} />
-                {product.outOfStock ? 'Нет в наличии' : 'В корзину'}
-              </button>
-            </div>
+            {/* Кнопка заказа — Phase 2 */}
 
             {/* Specifications */}
             {infoRows.length > 0 && (
@@ -284,7 +279,7 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                   className="bg-white border border-slate-100 rounded-2xl flex flex-col group hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200 hover:-translate-y-1 transition-all cursor-pointer overflow-hidden"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
-                    <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <img src={p.imageUrl} alt={p.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                     {p.conditionRaw !== 'contract' && (
                       <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                         p.conditionRaw === 'new' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-white'

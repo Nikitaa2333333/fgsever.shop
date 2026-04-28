@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, ShoppingCart, User, Phone, Menu, X, 
+  Search, Phone, Menu, X, 
   ChevronDown, ShieldCheck, Truck, RefreshCcw,
   Facebook, Instagram, Youtube, Mail, ChevronRight
 } from 'lucide-react';
@@ -14,14 +14,29 @@ function App() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeMobileCategory, setActiveMobileCategory] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<string>('home');
+  const getInitialPage = () => {
+    if (typeof window === 'undefined') return 'home';
+    const path = window.location.pathname.replace(/^\/+/, '');
+    return path || 'home';
+  };
+
+  const [currentPage, setCurrentPage] = useState<string>(getInitialPage());
 
   const navigate = (page: string) => {
     setCurrentPage(page);
+    window.history.pushState(null, '', page === 'home' ? '/' : `/${page}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsMobileMenuOpen(false);
     setActiveCategory(null);
   };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPage(getInitialPage());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -73,27 +88,6 @@ function App() {
                 <a href="tel:+74991100045" className="text-sm font-bold text-slate-800 hover:text-blue-600 transition-colors">+7 (499) 110–00–45</a>
               </div>
             </div>
-            
-            <a href="#" className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors">
-               <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                 <User size={20} />
-               </div>
-            </a>
-
-            <a href="#" className="flex items-center gap-3 text-slate-600 hover:text-blue-600 transition-colors">
-              <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
-                  <ShoppingCart size={18} />
-                </div>
-                <span className="absolute -top-1 -right-1 bg-slate-900 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  0
-                </span>
-              </div>
-              <div className="hidden lg:flex flex-col">
-                <span className="text-xs text-slate-400 font-medium">Корзина</span>
-                <span className="text-sm font-bold text-slate-800">0 ₽</span>
-              </div>
-            </a>
           </div>
         </div>
 
@@ -247,6 +241,8 @@ function App() {
               <img 
                 src={block.image} 
                 alt={block.title} 
+                loading="lazy"
+                decoding="async"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
               />
               <div className="absolute inset-0 p-6 md:p-8 z-20 flex flex-col justify-end items-center text-center">

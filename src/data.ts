@@ -197,6 +197,7 @@ export interface CatalogProduct {
   body: string;
   engine: string;
   imageUrl: string;
+  photos: string[];
   color: string;
   conditionRaw: string;
   condition: string;

@@ -6,3 +6,15 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Авто-генерируемые файлы (создаются npm run convert)
+src/generated/catalog.json
+src/generated/products.json
+src/generated/cars.json
+
+# CSV-кэши Базон (не нужны в git — данные берутся по URL)
+partssever-site-products.csv
+partssever-site-carsrc.csv
+
+# Временные файлы
+scratch/
