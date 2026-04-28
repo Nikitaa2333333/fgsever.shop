@@ -1,6 +1,8 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { join, dirname } from 'path';
+import { parse } from 'csv-parse/sync';
+import db from './db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -10,38 +12,12 @@ const BAZON_PRODUCTS_URL = 'https://baz-on.ru/export/c3677/07d7c/partssever-site
 const BAZON_CARS_URL    = 'https://baz-on.ru/export/c3677/7c88b/partssever-site-carsrc.csv';
 const SYNC_INTERVAL_MS  = 20 * 60 * 1000; // 20 минут
 
-// --- In-memory store ---
-let catalog = [];
-let cars    = [];
 let lastSync = null;
 let syncError = null;
 
-// --- CSV parser ---
+// --- Утилиты парсинга ---
 function decode1251(buffer) {
   return new TextDecoder('windows-1251').decode(buffer);
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let current = '', inQuotes = false;
-  for (const ch of line) {
-    if (ch === '"') inQuotes = !inQuotes;
-    else if (ch === ';' && !inQuotes) { result.push(current); current = ''; }
-    else current += ch;
-  }
-  result.push(current);
-  return result;
-}
-
-function parseCSV(content) {
-  const lines = content.split('\n').filter(l => l.trim());
-  const headers = parseCSVLine(lines[0]);
-  return lines.slice(1).map(line => {
-    const values = parseCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = (values[i] || '').trim(); });
-    return obj;
-  });
 }
 
 // --- Category detection ---
@@ -78,6 +54,102 @@ function formatPosition(fb, lr, ud) {
   return [map[fb], map[lr], map[ud]].filter(Boolean).join(' ');
 }
 
+// --- Подготовка SQL-запросов ---
+const insertCarStmt = db.prepare(`
+  INSERT INTO cars (id, name, brand, model, year, body, engine, steeringWheel, transmission, transmissionModel, drive, trim, vin, description, video, mileage, color, price)
+  VALUES (@id, @name, @brand, @model, @year, @body, @engine, @steeringWheel, @transmission, @transmissionModel, @drive, @trim, @vin, @description, @video, @mileage, @color, @price)
+`);
+
+const insertProductStmt = db.prepare(`
+  INSERT INTO products (sku, title, donorId, brand, model, year, body, engine, positionRaw_fb, positionRaw_lr, positionRaw_ud, position, color, oem, crossNumbers, manufacturer, description, photos, imageUrl, conditionRaw, condition, isNew, price, priceFormatted, warehouse, outOfStock, categoryId, subCategory)
+  VALUES (@sku, @title, @donorId, @brand, @model, @year, @body, @engine, @positionRaw_fb, @positionRaw_lr, @positionRaw_ud, @position, @color, @oem, @crossNumbers, @manufacturer, @description, @photos, @imageUrl, @conditionRaw, @condition, @isNew, @price, @priceFormatted, @warehouse, @outOfStock, @categoryId, @subCategory)
+`);
+
+const clearCarsStmt = db.prepare('DELETE FROM cars');
+const clearProductsStmt = db.prepare('DELETE FROM products');
+
+// Транзакция для обновления всей базы
+const updateDatabaseTx = db.transaction((carsRecords, productsRecords) => {
+  clearCarsStmt.run();
+  clearProductsStmt.run();
+
+  // Добавляем машины
+  let carsCount = 0;
+  for (const r of carsRecords) {
+    insertCarStmt.run({
+      id: r['Номер'],
+      name: r['Поставка'],
+      brand: r['Марка'],
+      model: r['Модель'],
+      year: r['Год'],
+      body: r['Кузов'],
+      engine: r['Двигатель'],
+      steeringWheel: r['Руль (L/R)']?.split(':')[0] || '',
+      transmission: r['Тип КПП (/automatic/manual/variator)']?.split(':')[0] || '',
+      transmissionModel: r['Модель КПП'],
+      drive: r['Привод (/FD/BD/4WD)']?.split(':')[0] || '',
+      trim: r['Комплектация'],
+      vin: r['VIN'],
+      description: r['Описание'],
+      video: r['Видео'],
+      mileage: r['Пробег'],
+      color: r['Цвет'],
+      price: r['Стоимость']
+    });
+    carsCount++;
+  }
+
+  // Добавляем товары
+  let productsCount = 0;
+  for (const r of productsRecords) {
+    const photos = r['Фото'] ? r['Фото'].split(',').map(p => p.trim()).filter(Boolean) : [];
+    const imageUrl = photos[0] || '';
+    if (!imageUrl) continue; // Пропускаем товары без фото
+
+    const price = parseFloat(r['Цена']) || 0;
+    const conditionRaw = r['Новый/БУ (new/used/contract)'] || '';
+    const title = r['Наименование'] || '';
+    
+    const crossNumbers = r['Кросс-номера']
+      ? r['Кросс-номера'].split(',').map(n => n.trim()).filter(Boolean)
+      : [];
+
+    insertProductStmt.run({
+      sku: r['Артикул'] || '',
+      title: title,
+      donorId: r['Донор'] || '',
+      brand: r['Марка'] || '',
+      model: r['Модель'] || '',
+      year: r['Год'] || '',
+      body: r['Кузов'] || '',
+      engine: r['Двигатель'] || '',
+      positionRaw_fb: r['Перед/Зад (F/B)'] || '',
+      positionRaw_lr: r['Лев/Прав (L/R)'] || '',
+      positionRaw_ud: r['Верх/Низ (U/D)'] || '',
+      position: formatPosition(r['Перед/Зад (F/B)'], r['Лев/Прав (L/R)'], r['Верх/Низ (U/D)']),
+      color: r['Цвет'] || '',
+      oem: r['Маркировка'] || '',
+      crossNumbers: JSON.stringify(crossNumbers),
+      manufacturer: r['Производитель'] || '',
+      description: r['Комментарий'] || '',
+      photos: JSON.stringify(photos),
+      imageUrl: imageUrl,
+      conditionRaw: conditionRaw,
+      condition: formatCondition(conditionRaw),
+      isNew: conditionRaw === 'new' ? 1 : 0,
+      price: price,
+      priceFormatted: price > 0 ? `${price.toLocaleString('ru-RU')} ₽` : 'Цена по запросу',
+      warehouse: r['Склад'] || '',
+      outOfStock: (!r['Склад'] || r['Склад'].trim() === '' || price <= 0) ? 1 : 0,
+      categoryId: detectCategory(title),
+      subCategory: '' // TODO: Блок A, подкатегории (Этап 1)
+    });
+    productsCount++;
+  }
+
+  return { carsCount, productsCount };
+});
+
 // --- Main sync function ---
 async function syncFromBazon() {
   console.log(`[${new Date().toLocaleTimeString()}] Синхронизация с Bazon...`);
@@ -94,92 +166,17 @@ async function syncFromBazon() {
       carsRes.arrayBuffer(),
     ]);
 
-    // Parse cars into a map by ID
-    const carsRaw = parseCSV(decode1251(new Uint8Array(carsBuf)));
-    const carsMap = {};
-    carsRaw.forEach(r => {
-      carsMap[r['Номер']] = {
-        id: r['Номер'],
-        name: r['Поставка'],
-        brand: r['Марка'],
-        model: r['Модель'],
-        year: r['Год'],
-        body: r['Кузов'],
-        engine: r['Двигатель'],
-        steeringWheel: r['Руль (L/R)']?.split(':')[0] || '',
-        transmission: r['Тип КПП (/automatic/manual/variator)']?.split(':')[0] || '',
-        transmissionModel: r['Модель КПП'],
-        drive: r['Привод (/FD/BD/4WD)']?.split(':')[0] || '',
-        trim: r['Комплектация'],
-        vin: r['VIN'],
-        description: r['Описание'],
-        video: r['Видео'],
-        mileage: r['Пробег'],
-        color: r['Цвет'],
-        price: r['Стоимость'],
-      };
-    });
+    // Используем csv-parse для точного парсинга (учитывает переносы внутри кавычек)
+    const carsRecords = parse(decode1251(new Uint8Array(carsBuf)), { delimiter: ';', columns: true, skip_empty_lines: true, relax_quotes: true });
+    const productsRecords = parse(decode1251(new Uint8Array(productsBuf)), { delimiter: ';', columns: true, skip_empty_lines: true, relax_quotes: true });
 
-    // Parse products
-    const productsRaw = parseCSV(decode1251(new Uint8Array(productsBuf)));
-    const newCatalog = [];
+    // Сохраняем в SQLite
+    const { carsCount, productsCount } = updateDatabaseTx(carsRecords, productsRecords);
 
-    productsRaw.forEach((r, idx) => {
-      const photos = r['Фото'] ? r['Фото'].split(',').map(p => p.trim()).filter(Boolean) : [];
-      const imageUrl = photos[0] || '';
-      if (!imageUrl) return; // skip products without photo
-
-      const price = parseFloat(r['Цена']) || 0;
-      const conditionRaw = r['Новый/БУ (new/used/contract)'] || '';
-      const title = r['Наименование'] || '';
-      const donorId = r['Донор'];
-      const donor = carsMap[donorId] || null;
-
-      const crossNumbers = r['Кросс-номера']
-        ? r['Кросс-номера'].split(',').map(n => n.trim()).filter(Boolean)
-        : [];
-
-      newCatalog.push({
-        id: idx + 1,
-        sku: r['Артикул'],
-        title,
-        donorId,
-        brand: r['Марка'],
-        model: r['Модель'],
-        year: r['Год'],
-        body: r['Кузов'],
-        engine: r['Двигатель'],
-        position: formatPosition(r['Перед/Зад (F/B)'], r['Лев/Прав (L/R)'], r['Верх/Низ (U/D)']),
-        color: r['Цвет'],
-        oem: r['Маркировка'],
-        crossNumbers,
-        manufacturer: r['Производитель'],
-        description: r['Комментарий'],
-        photos,
-        imageUrl,
-        conditionRaw,
-        condition: formatCondition(conditionRaw),
-        isNew: conditionRaw === 'new',
-        price,
-        priceFormatted: price > 0 ? `${price.toLocaleString('ru-RU')} ₽` : 'Цена по запросу',
-        warehouse: r['Склад'],
-        outOfStock: !r['Склад'] || r['Склад'].trim() === '' || price <= 0,
-        categoryId: detectCategory(title),
-        donor: donor ? {
-          name: donor.name, brand: donor.brand, model: donor.model, year: donor.year,
-          body: donor.body, engine: donor.engine, mileage: donor.mileage, color: donor.color,
-          transmission: donor.transmission, drive: donor.drive, vin: donor.vin,
-          video: donor.video, steeringWheel: donor.steeringWheel, trim: donor.trim,
-        } : null,
-      });
-    });
-
-    catalog = newCatalog;
-    cars    = Object.values(carsMap);
     lastSync = new Date();
     syncError = null;
 
-    console.log(`✓ Загружено: ${catalog.length} запчастей, ${cars.length} доноров`);
+    console.log(`✓ SQLite обновлена: ${productsCount} запчастей, ${carsCount} доноров`);
   } catch (err) {
     syncError = err.message;
     console.error('✗ Ошибка синхронизации:', err.message);
@@ -190,42 +187,78 @@ async function syncFromBazon() {
 app.use(express.json());
 
 app.get('/api/status', (_, res) => {
-  res.json({ lastSync, error: syncError, products: catalog.length, cars: cars.length });
+  const { count: productsCount } = db.prepare('SELECT count(*) as count FROM products').get();
+  const { count: carsCount } = db.prepare('SELECT count(*) as count FROM cars').get();
+  res.json({ lastSync, error: syncError, products: productsCount, cars: carsCount });
 });
+
+// Helper to attach donor info and parse JSON
+function mapProductRecord(row) {
+  let donor = null;
+  if (row.donorId) {
+    donor = db.prepare('SELECT * FROM cars WHERE id = ?').get(row.donorId);
+  }
+  return {
+    ...row,
+    isNew: Boolean(row.isNew),
+    outOfStock: Boolean(row.outOfStock),
+    crossNumbers: JSON.parse(row.crossNumbers || '[]'),
+    photos: JSON.parse(row.photos || '[]'),
+    donor: donor ? {
+      name: donor.name, brand: donor.brand, model: donor.model, year: donor.year,
+      body: donor.body, engine: donor.engine, mileage: donor.mileage, color: donor.color,
+      transmission: donor.transmission, drive: donor.drive, vin: donor.vin,
+      video: donor.video, steeringWheel: donor.steeringWheel, trim: donor.trim,
+    } : null,
+  };
+}
 
 app.get('/api/products', (req, res) => {
   const { category, sort, limit, offset = 0, q } = req.query;
-  let result = [...catalog];
+  
+  let query = 'SELECT * FROM products WHERE 1=1';
+  const params = [];
 
-  if (category) result = result.filter(p => p.categoryId === category);
-
-  if (q) {
-    const lower = q.toLowerCase();
-    result = result.filter(p =>
-      p.title.toLowerCase().includes(lower) ||
-      (p.sku && p.sku.toLowerCase().includes(lower)) ||
-      (p.oem && p.oem.toLowerCase().includes(lower)) ||
-      p.crossNumbers.some(n => n.toLowerCase().includes(lower))
-    );
+  if (category) {
+    query += ' AND categoryId = ?';
+    params.push(category);
   }
 
-  if (sort === 'price_asc')  result.sort((a, b) => a.price - b.price);
-  else if (sort === 'price_desc') result.sort((a, b) => b.price - a.price);
-  else if (sort === 'stock') result.sort((a, b) => (a.outOfStock ? 1 : 0) - (b.outOfStock ? 1 : 0));
+  if (q) {
+    const term = `%${q.toLowerCase()}%`;
+    query += ' AND (LOWER(title) LIKE ? OR LOWER(sku) LIKE ? OR LOWER(oem) LIKE ? OR LOWER(crossNumbers) LIKE ?)';
+    params.push(term, term, term, term);
+  }
 
-  const total = result.length;
-  if (limit) result = result.slice(Number(offset), Number(offset) + Number(limit));
+  if (sort === 'price_asc')  query += ' ORDER BY price ASC';
+  else if (sort === 'price_desc') query += ' ORDER BY price DESC';
+  else if (sort === 'stock') query += ' ORDER BY outOfStock ASC, id ASC';
+  else query += ' ORDER BY id ASC';
 
-  res.json({ total, items: result });
+  // Считаем общее количество
+  const totalStmt = db.prepare(query.replace('SELECT *', 'SELECT count(*) as count').split('ORDER BY')[0]);
+  const { count } = totalStmt.get(params);
+
+  // Пагинация
+  if (limit) {
+    query += ' LIMIT ? OFFSET ?';
+    params.push(Number(limit), Number(offset));
+  }
+
+  const rows = db.prepare(query).all(params);
+  const items = rows.map(mapProductRecord);
+
+  res.json({ total: count, items });
 });
 
 app.get('/api/products/:id', (req, res) => {
-  const product = catalog.find(p => p.id === Number(req.params.id));
-  if (!product) return res.status(404).json({ error: 'Не найдено' });
-  res.json(product);
+  const row = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Не найдено' });
+  res.json(mapProductRecord(row));
 });
 
 app.get('/api/cars', (_, res) => {
+  const cars = db.prepare('SELECT * FROM cars').all();
   res.json(cars);
 });
 

@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { parse } from 'csv-parse/sync';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -22,38 +23,10 @@ function decode1251(buffer) {
   return new TextDecoder('windows-1251').decode(buffer);
 }
 
-function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-    } else if (ch === ';' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += ch;
-    }
-  }
-  result.push(current);
-  return result;
-}
-
-function parseCSV(content) {
-  const lines = content.split('\n').filter(l => l.trim());
-  const headers = parseCSVLine(lines[0]);
-  return lines.slice(1).map(line => {
-    const values = parseCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = (values[i] || '').trim(); });
-    return obj;
-  });
-}
+// Ручной парсер удален — используем csv-parse
 
 // --- Cars (donors) ---
-const carsRaw = parseCSV(decode1251(readFileSync(join(root, 'partssever-site-carsrc.csv'))));
+const carsRaw = parse(decode1251(readFileSync(join(root, 'partssever-site-carsrc.csv'))), { delimiter: ';', columns: true, skip_empty_lines: true, relax_quotes: true });
 
 const carsMap = {};
 carsRaw.forEach(r => {
@@ -122,7 +95,7 @@ function formatPosition(fb, lr, ud) {
 }
 
 // --- Products ---
-const productsRaw = parseCSV(decode1251(readFileSync(join(root, 'partssever-site-products.csv'))));
+const productsRaw = parse(decode1251(readFileSync(join(root, 'partssever-site-products.csv'))), { delimiter: ';', columns: true, skip_empty_lines: true, relax_quotes: true });
 
 const products = productsRaw.map((r, idx) => {
   const photos = r['Фото'] ? r['Фото'].split(',').map(p => p.trim()).filter(Boolean) : [];
