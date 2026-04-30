@@ -209,7 +209,7 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
 
             {/* Description / Compatibility directly under title */}
             {product.description && (
-              <div className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-line border-l-4 border-blue-100 pl-4 py-1">
+              <div className="text-base md:text-lg text-slate-600 leading-relaxed whitespace-pre-line">
                 {product.description}
               </div>
             )}
