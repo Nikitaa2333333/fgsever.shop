@@ -200,6 +200,7 @@ function App() {
         <SearchPage query={currentPage.replace('search-', '')} onNavigate={navigate} />
       ) : currentPage !== 'home' ? (
         <CategoryPage
+          key={currentPage.includes('--') ? currentPage.split('--')[0] : currentPage}
           categoryId={currentPage.includes('--') ? currentPage.split('--')[0] : currentPage}
           initialSubcat={currentPage.includes('--') ? currentPage.split('--')[1] : ''}
           onNavigate={navigate}
