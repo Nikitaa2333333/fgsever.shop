@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronDown, ChevronRight, SlidersHorizontal,
   Grid2x2, List, X
@@ -28,6 +28,11 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
   const [selectedSubcat, setSelectedSubcat] = useState<string>(initialSubcat);
   const [sort, setSort] = useState('new');
   const [view, setView] = useState<'grid' | 'list'>('grid');
+
+  // Синхронизируем выбранную подкатегорию при навигации из верхнего меню
+  useEffect(() => {
+    setSelectedSubcat(initialSubcat);
+  }, [initialSubcat]);
 
   const category = categories.find(c => c.id === categoryId);
   const groups = useGroups(categoryId);
