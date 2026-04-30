@@ -229,9 +229,9 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                 <div className="px-5 py-3 border-b border-slate-100">
                   <h3 className="font-semibold text-slate-900 text-[14px] uppercase tracking-wide">Характеристики</h3>
                 </div>
-                <div className="grid grid-cols-2 text-[13px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 text-[13px]">
                   {infoRows.map((row, idx) => (
-                    <div key={idx} className={`flex items-center gap-4 px-5 py-2.5 hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'border-r border-slate-100' : ''}`}>
+                    <div key={idx} className={`flex items-center gap-4 px-5 py-2.5 hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'md:border-r border-slate-100' : ''}`}>
                       <div className="flex items-center gap-2 text-slate-500 whitespace-nowrap shrink-0">
                         <span className="text-slate-400 shrink-0">{row.icon}</span>
                         {row.label}
@@ -277,7 +277,7 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                 <div className="px-5 py-3 border-b border-slate-100">
                   <h3 className="font-semibold text-slate-900 text-[14px] uppercase tracking-wide">Информация о доноре</h3>
                 </div>
-                <div className="grid grid-cols-2 text-[13px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 text-[13px]">
                   {[
                     ['Марка / Модель', `${product.donor.brand} ${product.donor.model}`],
                     ['Год выпуска', product.donor.year],
@@ -286,7 +286,7 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                     ['Привод', product.donor.drive],
                     ['Пробег', product.donor.mileage ? `${Number(product.donor.mileage).toLocaleString('ru-RU')} км` : ''],
                   ].filter(([, v]) => v).map(([label, value], idx) => (
-                    <div key={idx} className={`flex items-center gap-4 px-5 py-3 hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'border-r border-slate-100' : ''}`}>
+                    <div key={idx} className={`flex items-center gap-4 px-5 py-3 hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'md:border-r border-slate-100' : ''}`}>
                       <span className="text-slate-500 whitespace-nowrap shrink-0">{label}</span>
                       <span className="text-slate-800 font-semibold">{value}</span>
                     </div>
