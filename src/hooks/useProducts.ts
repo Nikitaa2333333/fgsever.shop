@@ -47,7 +47,7 @@ export function useProducts(category?: string, sort?: string, query?: string, su
         });
       })
       .finally(() => setLoading(false));
-  }, [category, sort, query]);
+  }, [category, sort, query, subCategory]);
 
   return { products, total, loading, error };
 }
