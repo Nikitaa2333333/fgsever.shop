@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Search, Phone, Menu, X,
-  ChevronDown, ShieldCheck, Truck, RefreshCcw,
-  Facebook, Instagram, Youtube, Mail, ChevronRight
+  ShieldCheck, Truck, RefreshCcw,
+  Instagram, Youtube, Mail, ChevronRight
 } from 'lucide-react';
 import { categories, products, heroSlides, blockLinks } from './data';
 import { CategoryPage } from './CategoryPage';
@@ -15,7 +15,7 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [activeMobileCategory, setActiveMobileCategory] = useState<string | null>(null);
+  const [activeSubcats, setActiveSubcats] = useState<{ subCategory: string; count: number }[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const getInitialPage = () => {
@@ -48,6 +48,14 @@ function App() {
     }, 5000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!activeCategory) { setActiveSubcats([]); return; }
+    fetch(`/api/groups?category=${activeCategory}`)
+      .then(r => r.json())
+      .then(data => setActiveSubcats(Array.isArray(data) ? data : []))
+      .catch(() => setActiveSubcats([]));
+  }, [activeCategory]);
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-slate-50 normal-case">
@@ -115,35 +123,36 @@ function App() {
           <div className="w-full mx-auto px-4 md:px-6 relative">
             <nav className="flex space-x-1 items-end overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pt-2 relative z-20">
               {categories.map((cat) => (
-                <button 
-                  key={cat.id} 
+                <button
+                  key={cat.id}
                   onMouseEnter={() => setActiveCategory(cat.id)}
-                  onClick={() => navigate(cat.id)}
-                  className={`flex-shrink-0 flex items-center gap-2 px-5 pt-3.5 pb-3 text-[14px] font-semibold transition-all whitespace-nowrap border-b-2
-                    ${activeCategory === cat.id 
-                      ? 'border-blue-600 text-blue-600' 
+                  onClick={() => { navigate(cat.id); setActiveCategory(null); }}
+                  className={`flex-shrink-0 px-5 pt-3.5 pb-3 text-[14px] font-semibold transition-all whitespace-nowrap border-b-2
+                    ${activeCategory === cat.id
+                      ? 'border-blue-600 text-blue-600'
                       : 'border-transparent text-slate-600 hover:text-blue-600 hover:border-blue-200'
                     }`}
                 >
                   {cat.title}
-                  <ChevronDown size={14} className={`transition-transform duration-300 ${activeCategory === cat.id ? 'rotate-180 text-blue-600' : 'opacity-40'}`} />
                 </button>
               ))}
             </nav>
 
-            {activeCategory && (
-              <div className="absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-xl z-10 pt-6 pb-8 px-6 md:px-8 flex flex-wrap gap-2 rounded-b-2xl">
-                {categories.find(c => c.id === activeCategory)?.links.map((subcat, idx) => (
+            {activeCategory && activeSubcats.length > 0 && (
+              <div className="absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-xl z-10 pt-5 pb-6 px-6 flex flex-wrap gap-2 rounded-b-2xl">
+                {activeSubcats.map((sub) => (
                   <button
-                    key={idx}
-                    onClick={() => navigate(`${activeCategory}--${subcat}`)}
+                    key={sub.subCategory}
+                    onClick={() => { navigate(`${activeCategory}--${sub.subCategory}`); setActiveCategory(null); }}
                     className="px-4 py-2 border border-slate-200 bg-slate-50 rounded-lg text-[13px] font-medium text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
                   >
-                    {subcat}
+                    {sub.subCategory}
+                    <span className="ml-2 text-[11px] text-slate-400">{sub.count}</span>
                   </button>
                 ))}
               </div>
             )}
+
             
             <div className="pointer-events-none absolute inset-y-0 right-0 w-16 md:w-32 bg-gradient-to-l from-white to-transparent z-30" />
           </div>
@@ -173,25 +182,11 @@ function App() {
               {categories.map((cat) => (
                 <li key={cat.id}>
                   <button
-                    className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
-                    onClick={() => setActiveMobileCategory(activeMobileCategory === cat.id ? null : cat.id)}
+                    className="w-full text-left px-4 py-3 text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                    onClick={() => navigate(cat.id)}
                   >
                     {cat.title}
-                    <ChevronDown size={16} className={`transition-transform duration-200 opacity-50 ${activeMobileCategory === cat.id ? 'rotate-180 opacity-100 text-blue-600' : ''}`} />
                   </button>
-                  {activeMobileCategory === cat.id && (
-                    <div className="flex flex-col gap-0.5 pl-4 pb-2">
-                      {cat.links.map((subcat, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => navigate(`${cat.id}--${subcat}`)}
-                          className="block w-full text-left px-4 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          {subcat}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </li>
               ))}
             </ul>
