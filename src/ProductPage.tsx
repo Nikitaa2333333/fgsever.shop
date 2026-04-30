@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronRight,
   Tag, Gauge, Palette, Hash,
@@ -12,10 +12,48 @@ interface ProductPageProps {
 }
 
 export function ProductPage({ productId, onNavigate }: ProductPageProps) {
-  const product = allProducts.find(p => p.id === productId);
+  const [product, setProduct] = useState<CatalogProduct | null | undefined>(undefined);
   const [activeImage, setActiveImage] = useState(0);
+  const [related, setRelated] = useState<CatalogProduct[]>([]);
 
-  if (!product) {
+  useEffect(() => {
+    setProduct(undefined);
+    setActiveImage(0);
+    fetch(`/api/products/${productId}`)
+      .then(r => {
+        if (!r.ok) throw new Error('not found');
+        return r.json();
+      })
+      .then(data => setProduct(data))
+      .catch(() => {
+        const found = allProducts.find(p => p.id === productId) ?? null;
+        setProduct(found);
+      });
+  }, [productId]);
+
+  useEffect(() => {
+    if (!product) return;
+    fetch(`/api/products?category=${product.categoryId}&limit=5`)
+      .then(r => r.json())
+      .then(data => {
+        setRelated((data.items as CatalogProduct[]).filter(p => p.id !== product.id).slice(0, 4));
+      })
+      .catch(() => {
+        setRelated(
+          allProducts.filter(p => p.categoryId === product.categoryId && p.id !== product.id && p.imageUrl).slice(0, 4)
+        );
+      });
+  }, [product?.categoryId, product?.id]);
+
+  if (product === undefined) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-32 text-slate-400">
+        Загрузка...
+      </div>
+    );
+  }
+
+  if (product === null) {
     return (
       <div className="flex-1 flex items-center justify-center py-32 text-slate-400">
         Товар не найден
@@ -30,20 +68,22 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
     ? product.photos
     : [product.imageUrl].filter(Boolean);
 
-  // Related products: same category, different id, with image
-  const related = allProducts
-    .filter(p => p.categoryId === product.categoryId && p.id !== product.id && p.imageUrl)
-    .slice(0, 4);
+  // Применяемость: собираем из полей товара
+  const applicability = [product.brand, product.model, product.year, product.body, product.engine]
+    .filter(Boolean)
+    .join(' · ');
 
   const infoRows = [
-    product.oem && { label: 'Номер детали', value: product.oem, icon: <Hash size={15} /> },
+    product.sku && { label: 'Артикул', value: product.sku, icon: <Hash size={15} /> },
+    product.oem && { label: 'OEM-номер', value: product.oem, icon: <Hash size={15} /> },
     product.condition && { label: 'Состояние', value: product.condition, icon: <Tag size={15} /> },
-    product.year && { label: 'Год выпуска', value: product.year, icon: <Gauge size={15} /> },
-    product.color && { 
-      label: 'Цвет', 
-      value: product.color, 
+    applicability && { label: 'Применяемость', value: applicability, icon: <Gauge size={15} /> },
+    product.position && { label: 'Расположение', value: product.position, icon: <Gauge size={15} /> },
+    product.color && {
+      label: 'Цвет',
+      value: product.color,
       icon: <Palette size={15} />,
-      colorCircle: true 
+      colorCircle: true
     },
   ].filter(Boolean) as any[];
 
@@ -241,8 +281,10 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                   {[
                     ['Марка / Модель', `${product.donor.brand} ${product.donor.model}`],
                     ['Год выпуска', product.donor.year],
-                    ['Реальный пробег', product.donor.mileage ? `${Number(product.donor.mileage).toLocaleString('ru-RU')} км` : 'Не указан'],
-                    ['VIN номер', <span className="font-mono text-[12px]">{product.donor.vin}</span>],
+                    ['Двигатель', product.donor.engine],
+                    ['Коробка', product.donor.transmission],
+                    ['Привод', product.donor.drive],
+                    ['Пробег', product.donor.mileage ? `${Number(product.donor.mileage).toLocaleString('ru-RU')} км` : ''],
                   ].filter(([, v]) => v).map(([label, value], idx) => (
                     <div key={idx} className={`flex items-center gap-4 px-5 py-3 hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'border-r border-slate-100' : ''}`}>
                       <span className="text-slate-500 whitespace-nowrap shrink-0">{label}</span>

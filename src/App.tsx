@@ -133,14 +133,14 @@ function App() {
 
             {activeCategory && (
               <div className="absolute top-full left-0 right-0 bg-white border-t border-slate-100 shadow-xl z-10 pt-6 pb-8 px-6 md:px-8 flex flex-wrap gap-2 rounded-b-2xl">
-                {categories.find(c => c.id === activeCategory)?.links.map((link, idx) => (
-                  <a 
-                    key={idx} 
-                    href={link.href} 
+                {categories.find(c => c.id === activeCategory)?.links.map((subcat, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => navigate(`${activeCategory}--${subcat}`)}
                     className="px-4 py-2 border border-slate-200 bg-slate-50 rounded-lg text-[13px] font-medium text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
                   >
-                    {link.title}
-                  </a>
+                    {subcat}
+                  </button>
                 ))}
               </div>
             )}
@@ -181,15 +181,14 @@ function App() {
                   </button>
                   {activeMobileCategory === cat.id && (
                     <div className="flex flex-col gap-0.5 pl-4 pb-2">
-                      {cat.links.map((link, idx) => (
-                        <a
+                      {cat.links.map((subcat, idx) => (
+                        <button
                           key={idx}
-                          href={link.href}
-                          className="block px-4 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          onClick={() => setIsMobileMenuOpen(false)}
+                          onClick={() => navigate(`${cat.id}--${subcat}`)}
+                          className="block w-full text-left px-4 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
-                          {link.title}
-                        </a>
+                          {subcat}
+                        </button>
                       ))}
                     </div>
                   )}
@@ -205,7 +204,11 @@ function App() {
       ) : currentPage.startsWith('search-') ? (
         <SearchPage query={currentPage.replace('search-', '')} onNavigate={navigate} />
       ) : currentPage !== 'home' ? (
-        <CategoryPage categoryId={currentPage} onNavigate={navigate} />
+        <CategoryPage
+          categoryId={currentPage.includes('--') ? currentPage.split('--')[0] : currentPage}
+          initialSubcat={currentPage.includes('--') ? currentPage.split('--')[1] : ''}
+          onNavigate={navigate}
+        />
       ) : (
       <main className="flex-1 w-full mx-auto px-4 md:px-6 pb-20">
         

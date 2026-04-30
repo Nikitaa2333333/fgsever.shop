@@ -27,12 +27,22 @@ export function SearchPage({ query, onNavigate }: SearchPageProps) {
 
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [categoryGroups, setCategoryGroups] = useState<{ categoryId: string; count: number }[]>([]);
   const [sort, setSort] = useState('new');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [modelsOpen, setModelsOpen] = useState(true);
   const [conditionsOpen, setConditionsOpen] = useState(true);
 
-  const { products: rawProducts, total, loading } = useProducts(undefined, sort, decodedQuery);
+  const { products: rawProducts, total, loading } = useProducts(selectedCategory || undefined, sort, decodedQuery);
+
+  // Получаем группы категорий для текущего поиска
+  React.useEffect(() => {
+    fetch(`/api/search-groups?q=${encodeURIComponent(decodedQuery)}`)
+      .then(r => r.json())
+      .then(setCategoryGroups)
+      .catch(() => setCategoryGroups([]));
+  }, [decodedQuery]);
 
   // Клиентская фильтрация по модели и состоянию
   const products: CatalogProduct[] = rawProducts.filter(p => {
@@ -54,6 +64,20 @@ export function SearchPage({ query, onNavigate }: SearchPageProps) {
     setSelectedConditions(prev =>
       prev.includes(cond) ? prev.filter(c => c !== cond) : [...prev, cond]
     );
+
+  const getCategoryTitle = (id: string) => {
+    return import('../data').then(m => m.categories.find(c => c.id === id)?.title || id);
+  };
+
+  const [categoryTitles, setCategoryTitles] = useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    import('../data').then(m => {
+      const titles: Record<string, string> = {};
+      m.categories.forEach(c => { titles[c.id] = c.title; });
+      setCategoryTitles(titles);
+    });
+  }, []);
 
   return (
     <div className="flex-1 pb-24">
@@ -79,9 +103,43 @@ export function SearchPage({ query, onNavigate }: SearchPageProps) {
         <h1 className="font-oswald font-semibold text-4xl md:text-6xl text-slate-900 mb-2 tracking-tight">
           Результаты поиска
         </h1>
-        <p className="text-slate-400 text-sm mb-8">
+        <p className="text-slate-400 text-sm mb-6">
           По запросу «{decodedQuery}»
         </p>
+
+        {/* Группы категорий (плитки) */}
+        {categoryGroups.length > 1 && (
+          <div className="flex flex-wrap gap-3 mb-10">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`px-6 py-3 rounded-2xl border text-sm font-semibold transition-all ${
+                selectedCategory === null
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : 'bg-white border-slate-100 text-slate-600 hover:border-blue-200 hover:text-blue-600'
+              }`}
+            >
+              Все категории
+            </button>
+            {categoryGroups.map(group => (
+              <button
+                key={group.categoryId}
+                onClick={() => setSelectedCategory(group.categoryId)}
+                className={`px-6 py-3 rounded-2xl border text-sm font-semibold transition-all flex items-center gap-2 ${
+                  selectedCategory === group.categoryId
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20'
+                    : 'bg-white border-slate-100 text-slate-600 hover:border-blue-200 hover:text-blue-600'
+                }`}
+              >
+                {categoryTitles[group.categoryId] || group.categoryId}
+                <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
+                  selectedCategory === group.categoryId ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
+                }`}>
+                  {group.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start">
           {/* ── Sidebar ── */}

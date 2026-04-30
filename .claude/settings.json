@@ -10,5 +10,18 @@
       "Bash(git log *)",
       "Bash(git remote *)"
     ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/check-progress.mjs"
+          }
+        ]
+      }
+    ]
   }
 }

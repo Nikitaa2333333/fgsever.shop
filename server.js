@@ -42,6 +42,120 @@ function detectCategory(name) {
   return 'mechanical-parts';
 }
 
+// Подкатегории — keyword-matching внутри каждой категории
+const SUBCATEGORY_MAP = {
+  'mechanical-parts': [
+    { name: 'Двигатели в сборе',      keywords: ['двигатель в сборе', 'мотор в сборе', 'двс в сборе'] },
+    { name: 'Коробки передач',         keywords: ['коробка передач', 'кпп', 'акпп', 'мкпп', 'вариатор'] },
+    { name: 'Турбокомпрессоры',        keywords: ['турбо', 'турбина', 'турбокомпрессор'] },
+    { name: 'Генераторы',              keywords: ['генератор'] },
+    { name: 'Стартеры',                keywords: ['стартер'] },
+    { name: 'Радиаторы',               keywords: ['радиатор'] },
+    { name: 'Компрессоры кондиционера',keywords: ['компрессор кондиц'] },
+    { name: 'Катализаторы / DPF',      keywords: ['катализатор', 'dpf', 'сажевый'] },
+    { name: 'Воздушные фильтры',       keywords: ['воздушный фильтр', 'фильтр воздуш'] },
+    { name: 'Патрубки наддува',        keywords: ['патрубок'] },
+    { name: 'Webasto',                 keywords: ['webasto'] },
+    { name: 'Детали двигателя',        keywords: ['двигател', 'помпа', 'маслян', 'охладитель'] },
+  ],
+  'car-electronics': [
+    { name: 'Блоки управления',        keywords: ['блок управления', 'блок модуль', 'ecu', 'egs', 'dme', 'cas'] },
+    { name: 'Датчики',                 keywords: ['датчик', 'лямбда', 'nox'] },
+    { name: 'Камеры и модули',         keywords: ['камер', 'kafas', 'видеомодул'] },
+    { name: 'MULF / ULF / Combox',     keywords: ['mulf', 'ulf', 'combox'] },
+    { name: 'Аккумуляторы',            keywords: ['аккумулятор'] },
+    { name: 'Проводка',                keywords: ['проводка', 'жгут'] },
+    { name: 'Антенны',                 keywords: ['антенна'] },
+    { name: 'Датчики слепых зон',      keywords: ['слепых зон', 'bsm'] },
+    { name: 'Переключатели',           keywords: ['переключател', 'реле'] },
+  ],
+  'interior': [
+    { name: 'Подушки безопасности',    keywords: ['подушка безопасности', 'airbag', 'аирбаг'] },
+    { name: 'Сиденья и обивка',        keywords: ['сиден', 'обивк'] },
+    { name: 'Дверные карты',           keywords: ['дверн карт', 'карта двер'] },
+    { name: 'Рулевые колеса',          keywords: ['руль', 'рулевое колесо'] },
+    { name: 'Приборные панели',        keywords: ['приборн', 'щиток прибор'] },
+    { name: 'Центральная консоль',     keywords: ['консол'] },
+    { name: 'Климат-контроль',         keywords: ['климат'] },
+    { name: 'Проекция на стекло',      keywords: ['проекц', 'hud'] },
+    { name: 'Декор и планки',          keywords: ['декоративн', 'планк', 'накладк'] },
+    { name: 'Зеркала внутренние',      keywords: ['зеркало внутренн', 'зеркало салон'] },
+    { name: 'Подлокотники',            keywords: ['подлокотник'] },
+    { name: 'Коврики',                 keywords: ['коврик', 'ковёр'] },
+    { name: 'Беспроводные зарядки',    keywords: ['беспроводн'] },
+    { name: 'USB / AUX',               keywords: ['usb', 'aux'] },
+    { name: 'Потолки',                 keywords: ['потолок'] },
+  ],
+  'lights': [
+    { name: 'Фары передние',           keywords: ['фара передн', 'фара прав', 'фара лев'] },
+    { name: 'Фонари задние',           keywords: ['фонарь задн', 'фонарь прав', 'фонарь лев'] },
+    { name: 'Противотуманные фары',    keywords: ['противотуманн'] },
+    { name: 'Модули освещения',        keywords: ['модуль освещ', 'блок фар', 'адаптивн'] },
+  ],
+  'audio-systems': [
+    { name: 'Динамики',                keywords: ['динамик', 'колонк'] },
+    { name: 'Усилители',               keywords: ['усилитель'] },
+    { name: 'Сабвуферы',               keywords: ['сабвуф'] },
+    { name: 'Чейнджеры',               keywords: ['чейнджер'] },
+    { name: 'Решетки динамиков',       keywords: ['решетка динамик', 'решётка динамик'] },
+  ],
+  'body-parts': [
+    { name: 'Бамперы',                 keywords: ['бампер'] },
+    { name: 'Крылья',                  keywords: ['крыло', 'крыл'] },
+    { name: 'Двери',                   keywords: ['дверь', 'двер'] },
+    { name: 'Капоты',                  keywords: ['капот'] },
+    { name: 'Крышки багажника',        keywords: ['крышка багажник'] },
+    { name: 'Зеркала',                 keywords: ['зеркало'] },
+    { name: 'Решетки радиатора',       keywords: ['решетка радиатор', 'решётка радиатор'] },
+    { name: 'Пороги',                  keywords: ['порог'] },
+    { name: 'Выхлопные системы',       keywords: ['выхлоп'] },
+    { name: 'Дверные ручки',           keywords: ['ручка двер', 'дверная ручка'] },
+    { name: 'Эмблемы',                 keywords: ['эмблема'] },
+    { name: 'Фаркопы',                 keywords: ['фаркоп'] },
+    { name: 'Рейлинги и багажники',    keywords: ['рейлинг', 'багажник'] },
+  ],
+  'navigation-entertainment': [
+    { name: 'Дисплеи',                 keywords: ['дисплей', 'монитор', 'экран'] },
+    { name: 'Головные устройства',     keywords: ['головное', 'магнитол'] },
+    { name: 'Навигация',               keywords: ['навигац'] },
+    { name: 'Джойстики',               keywords: ['джойстик', 'контроллер'] },
+    { name: 'Чейнджеры',               keywords: ['чейнджер'] },
+    { name: 'Мультимедиа',             keywords: ['мультимедиа'] },
+  ],
+  'suspension': [
+    { name: 'Амортизаторы',            keywords: ['амортизатор'] },
+    { name: 'Рычаги',                  keywords: ['рычаг'] },
+    { name: 'Стабилизаторы',           keywords: ['стабилизатор'] },
+    { name: 'Ступицы',                 keywords: ['ступиц'] },
+    { name: 'Приводные валы',          keywords: ['привод', 'полуось'] },
+    { name: 'Редукторы',               keywords: ['редуктор'] },
+    { name: 'Рулевые рейки',           keywords: ['рулевая рейка', 'рейка рул'] },
+    { name: 'Подрамники',              keywords: ['подрамник'] },
+  ],
+  'brake-system': [
+    { name: 'Суппорты',                keywords: ['суппорт'] },
+    { name: 'Тормозные диски',         keywords: ['диск тормоз', 'тормозной диск'] },
+    { name: 'Тормозные колодки',       keywords: ['колодк'] },
+    { name: 'Насосы ABS',              keywords: ['abs', 'насос abs'] },
+    { name: 'Тормозные трубки',        keywords: ['трубк'] },
+  ],
+  'wheels-rims-tires': [
+    { name: 'Диски',                   keywords: ['диск'] },
+    { name: 'Шины',                    keywords: ['шина', 'резина'] },
+    { name: 'Комплекты колес',         keywords: ['комплект колес', 'колесо'] },
+  ],
+};
+
+function detectSubCategory(name, categoryId) {
+  const lower = name.toLowerCase();
+  const subcats = SUBCATEGORY_MAP[categoryId];
+  if (!subcats) return '';
+  for (const sub of subcats) {
+    if (sub.keywords.some(kw => lower.includes(kw))) return sub.name;
+  }
+  return '';
+}
+
 function formatCondition(raw) {
   if (raw === 'new') return 'Новый';
   if (raw === 'used') return 'Б/У';
@@ -143,7 +257,7 @@ const updateDatabaseTx = db.transaction((carsRecords, productsRecords) => {
       warehouse: r['Склад'] || '',
       outOfStock: (!r['Склад'] || r['Склад'].trim() === '' || price <= 0) ? 1 : 0,
       categoryId: detectCategory(title),
-      subCategory: '' // TODO: Блок A, подкатегории (Этап 1)
+      subCategory: detectSubCategory(title, detectCategory(title))
     });
     productsCount++;
   }
@@ -228,6 +342,7 @@ app.get('/api/products', (req, res) => {
   if (q) {
     const term = `%${q.toLowerCase()}%`;
     // titleSearch хранит title.toLowerCase() — SQLite LOWER() не понижает кириллицу
+    // Поиск только по названию, артикулу, OEM и кросс-номерам (без модели/года — для этого есть фильтры)
     query += ' AND (titleSearch LIKE ? OR LOWER(sku) LIKE ? OR LOWER(oem) LIKE ? OR LOWER(crossNumbers) LIKE ?)';
     params.push(term, term, term, term);
   }
@@ -262,6 +377,35 @@ app.get('/api/products/:id', (req, res) => {
 app.get('/api/cars', (_, res) => {
   const cars = db.prepare('SELECT * FROM cars').all();
   res.json(cars);
+});
+
+app.get('/api/groups', (req, res) => {
+  const { category } = req.query;
+  if (!category) return res.status(400).json({ error: 'category обязателен' });
+
+  const rows = db.prepare(
+    `SELECT subCategory, count(*) as count FROM products
+     WHERE categoryId = ? AND subCategory != ''
+     GROUP BY subCategory ORDER BY count DESC`
+  ).all(category);
+
+  res.json(rows);
+});
+
+// Группировка результатов поиска по категориям
+app.get('/api/search-groups', (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.json([]);
+
+  const term = `%${q.toLowerCase()}%`;
+  const rows = db.prepare(
+    `SELECT categoryId, count(*) as count FROM products
+     WHERE (titleSearch LIKE ? OR LOWER(sku) LIKE ? OR LOWER(oem) LIKE ? OR LOWER(crossNumbers) LIKE ?)
+     GROUP BY categoryId
+     ORDER BY count DESC`
+  ).all(term, term, term, term);
+
+  res.json(rows);
 });
 
 // --- Serve built React app ---

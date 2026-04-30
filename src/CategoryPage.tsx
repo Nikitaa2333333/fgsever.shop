@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { categories, type CatalogProduct } from './data';
 import { useProducts } from './hooks/useProducts';
+import { useGroups } from './hooks/useGroups';
 
 const BMW_MODELS = [
   '1 серия', '2 серия', '3 серия', '4 серия', '5 серия',
@@ -16,23 +17,28 @@ const BMW_MODELS = [
 
 interface CategoryPageProps {
   categoryId: string;
+  initialSubcat?: string;
   onNavigate: (page: string) => void;
 }
 
-export function CategoryPage({ categoryId, onNavigate }: CategoryPageProps) {
+export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: CategoryPageProps) {
   const [modelsOpen, setModelsOpen] = useState(true);
   const [subcatsOpen, setSubcatsOpen] = useState(true);
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [selectedSubcat, setSelectedSubcat] = useState<string>(initialSubcat);
   const [sort, setSort] = useState('new');
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
   const category = categories.find(c => c.id === categoryId);
+  const groups = useGroups(categoryId);
 
   const { products: rawProducts, total, loading } = useProducts(categoryId, sort);
 
-  const categoryProducts: CatalogProduct[] = rawProducts.filter(p =>
-    selectedModels.length === 0 || selectedModels.some(m => p.model.includes(m.replace(' серия', '')))
-  );
+  const categoryProducts: CatalogProduct[] = rawProducts.filter(p => {
+    const modelMatch = selectedModels.length === 0 || selectedModels.some(m => p.model.includes(m.replace(' серия', '')));
+    const subcatMatch = !selectedSubcat || p.subCategory === selectedSubcat;
+    return modelMatch && subcatMatch;
+  });
 
   const toggleModel = (model: string) => {
     setSelectedModels(prev =>
@@ -122,8 +128,8 @@ export function CategoryPage({ categoryId, onNavigate }: CategoryPageProps) {
               )}
             </div>
 
-            {/* Subcategories */}
-            {category && (
+            {/* Подкатегории */}
+            {groups.length > 0 && (
               <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                 <button
                   onClick={() => setSubcatsOpen(v => !v)}
@@ -137,14 +143,26 @@ export function CategoryPage({ categoryId, onNavigate }: CategoryPageProps) {
                 </button>
                 {subcatsOpen && (
                   <div className="border-t border-slate-100 px-3 py-3 flex flex-col gap-0.5">
-                    {category.links.map((link, idx) => (
-                      <a
-                        key={idx}
-                        href={link.href}
-                        className="block px-4 py-2 text-[13px] text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                    <button
+                      onClick={() => setSelectedSubcat('')}
+                      className={`flex items-center justify-between px-4 py-2 text-[13px] rounded-xl transition-colors text-left ${
+                        selectedSubcat === '' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                      }`}
+                    >
+                      <span>Все</span>
+                      <span className={`text-[11px] font-medium ${selectedSubcat === '' ? 'text-blue-100' : 'text-slate-400'}`}>{total}</span>
+                    </button>
+                    {groups.map(g => (
+                      <button
+                        key={g.subCategory}
+                        onClick={() => setSelectedSubcat(prev => prev === g.subCategory ? '' : g.subCategory)}
+                        className={`flex items-center justify-between px-4 py-2 text-[13px] rounded-xl transition-colors text-left ${
+                          selectedSubcat === g.subCategory ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                        }`}
                       >
-                        {link.title}
-                      </a>
+                        <span>{g.subCategory}</span>
+                        <span className={`text-[11px] font-medium ${selectedSubcat === g.subCategory ? 'text-blue-100' : 'text-slate-400'}`}>{g.count}</span>
+                      </button>
                     ))}
                   </div>
                 )}
