@@ -329,14 +329,19 @@ function mapProductRecord(row) {
 }
 
 app.get('/api/products', (req, res) => {
-  const { category, sort, limit, offset = 0, q } = req.query;
-  
+  const { category, subCategory, sort, limit, offset = 0, q } = req.query;
+
   let query = 'SELECT * FROM products WHERE 1=1';
   const params = [];
 
   if (category) {
     query += ' AND categoryId = ?';
     params.push(category);
+  }
+
+  if (subCategory) {
+    query += ' AND subCategory = ?';
+    params.push(subCategory);
   }
 
   if (q) {

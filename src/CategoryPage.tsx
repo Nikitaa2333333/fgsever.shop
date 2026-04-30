@@ -32,12 +32,10 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
   const category = categories.find(c => c.id === categoryId);
   const groups = useGroups(categoryId);
 
-  const { products: rawProducts, total, loading } = useProducts(categoryId, sort);
+  const { products: rawProducts, total, loading } = useProducts(categoryId, sort, undefined, selectedSubcat || undefined);
 
   const categoryProducts: CatalogProduct[] = rawProducts.filter(p => {
-    const modelMatch = selectedModels.length === 0 || selectedModels.some(m => p.model.includes(m.replace(' серия', '')));
-    const subcatMatch = !selectedSubcat || p.subCategory === selectedSubcat;
-    return modelMatch && subcatMatch;
+    return selectedModels.length === 0 || selectedModels.some(m => p.model.includes(m.replace(' серия', '')));
   });
 
   const toggleModel = (model: string) => {
