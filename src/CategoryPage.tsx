@@ -19,6 +19,7 @@ interface CategoryPageProps {
   categoryId: string;
   initialSubcat?: string;
   onNavigate: (page: string) => void;
+  key?: React.Key;
 }
 
 export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: CategoryPageProps) {
@@ -239,8 +240,12 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
               <div className="grid grid-cols-2 xl:grid-cols-3 gap-5">
                 {categoryProducts.map(product => (
                   <div key={product.id} onClick={() => onNavigate(`product-${product.id}`)} className="bg-white border border-slate-100 rounded-2xl flex flex-col group hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200 hover:-translate-y-1 transition-all relative overflow-hidden cursor-pointer">
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <img src={product.imageUrl} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                      {product.imageUrl ? (
+                        <img src={product.imageUrl} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">Фото отсутствует</div>
+                      )}
                       {product.conditionRaw !== 'contract' && (
                         <span className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded-full ${
                           product.conditionRaw === 'new' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-white'
@@ -277,8 +282,12 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
               <div className="flex flex-col gap-4">
                 {categoryProducts.map(product => (
                   <div key={product.id} onClick={() => onNavigate(`product-${product.id}`)} className="bg-white border border-slate-100 rounded-2xl flex flex-col sm:flex-row gap-4 sm:gap-6 group hover:shadow-lg hover:border-slate-200 transition-all relative overflow-hidden p-4 sm:p-5 cursor-pointer">
-                    <div className="relative w-full sm:w-40 h-40 flex-shrink-0 overflow-hidden rounded-xl">
-                      <img src={product.imageUrl} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="relative w-full sm:w-40 h-40 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                      {product.imageUrl ? (
+                        <img src={product.imageUrl} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">Фото отсутствует</div>
+                      )}
                       {product.conditionRaw !== 'contract' && (
                         <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           product.conditionRaw === 'new' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-white'

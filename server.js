@@ -218,7 +218,7 @@ const updateDatabaseTx = db.transaction((carsRecords, productsRecords) => {
   for (const r of productsRecords) {
     const photos = r['Фото'] ? r['Фото'].split(',').map(p => p.trim()).filter(Boolean) : [];
     const imageUrl = photos[0] || '';
-    if (!imageUrl) continue; // Пропускаем товары без фото
+    // товары без фото включаем в каталог
 
     const price = parseFloat(r['Цена']) || 0;
     const conditionRaw = r['Новый/БУ (new/used/contract)'] || '';

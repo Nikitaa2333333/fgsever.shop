@@ -40,7 +40,7 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
       })
       .catch(() => {
         setRelated(
-          allProducts.filter(p => p.categoryId === product.categoryId && p.id !== product.id && p.imageUrl).slice(0, 4)
+          allProducts.filter(p => p.categoryId === product.categoryId && p.id !== product.id).slice(0, 4)
         );
       });
   }, [product?.categoryId, product?.id]);
@@ -320,8 +320,12 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
                   onClick={() => onNavigate(`product-${p.id}`)}
                   className="bg-white border border-slate-100 rounded-2xl flex flex-col group hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-200 hover:-translate-y-1 transition-all cursor-pointer overflow-hidden"
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <img src={p.imageUrl} alt={p.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                    {p.imageUrl ? (
+                      <img src={p.imageUrl} alt={p.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">Фото отсутствует</div>
+                    )}
                     {p.conditionRaw !== 'contract' && (
                       <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                         p.conditionRaw === 'new' ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-white'
