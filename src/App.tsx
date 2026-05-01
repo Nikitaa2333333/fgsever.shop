@@ -293,32 +293,32 @@ function App() {
             Почему выбирают нас
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-            <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col group hover:border-blue-300 hover:shadow-md transition-all duration-300">
-              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-blue-600 mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+            <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col">
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-blue-600 mb-8">
                 <ShieldCheck size={28} strokeWidth={2} />
               </div>
               <h4 className="font-oswald font-semibold text-2xl text-slate-900 mb-4 leading-tight">Только<br />оригинал</h4>
               <p className="text-slate-500 text-sm leading-relaxed">Поставляем исключительно оригинальные запчасти BMW и Mini с гарантией производителя.</p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col group hover:border-blue-300 hover:shadow-md transition-all duration-300">
-              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-blue-600 mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+            <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col">
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-blue-600 mb-8">
                 <Search size={28} strokeWidth={2} />
               </div>
               <h4 className="font-oswald font-semibold text-2xl text-slate-900 mb-4 leading-tight">Более 200 000<br />позиций</h4>
               <p className="text-slate-500 text-sm leading-relaxed">Каталог деталей для всех моделей BMW и Mini — от кузовных элементов до электроники.</p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col group hover:border-blue-300 hover:shadow-md transition-all duration-300">
-              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-blue-600 mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+            <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col">
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-blue-600 mb-8">
                 <Truck size={28} strokeWidth={2} />
               </div>
               <h4 className="font-oswald font-semibold text-2xl text-slate-900 mb-4 leading-tight">Быстрая<br />доставка</h4>
               <p className="text-slate-500 text-sm leading-relaxed">Отправка в день заказа при наличии на складе. Доставка по всей России.</p>
             </div>
 
-            <div className="bg-blue-600 border border-blue-600 rounded-[2rem] p-8 md:p-10 flex flex-col group relative overflow-hidden hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/30 transition-all duration-300">
-              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-8 transition-all duration-300">
+            <div className="bg-blue-600 border border-blue-600 rounded-[2rem] p-8 md:p-10 flex flex-col relative overflow-hidden">
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-8">
                 <RefreshCcw size={28} strokeWidth={2} />
               </div>
               <h4 className="font-oswald font-semibold text-2xl text-white mb-4 leading-tight relative">Возврат<br />и обмен</h4>
