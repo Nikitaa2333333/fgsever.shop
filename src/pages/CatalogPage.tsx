@@ -239,17 +239,8 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
                       {product.sku && (
                         <p className="text-[11px] text-slate-400 mb-2 font-mono">{product.sku}</p>
                       )}
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-slate-900 text-[15px]">{product.priceFormatted}</span>
-                        {product.condition && (
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                            product.condition === 'Новый'
-                              ? 'bg-green-50 text-green-700'
-                              : 'bg-amber-50 text-amber-700'
-                          }`}>
-                            {product.condition}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
