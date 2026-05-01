@@ -8,7 +8,7 @@ interface UseProductsResult {
   error: string | null;
 }
 
-export function useProducts(category?: string, sort?: string, query?: string, subCategory?: string): UseProductsResult {
+export function useProducts(category?: string, sort?: string, query?: string, subCategory?: string, limit?: number): UseProductsResult {
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -21,6 +21,7 @@ export function useProducts(category?: string, sort?: string, query?: string, su
     if (sort) params.set('sort', sort);
     if (query) params.set('q', query);
     if (subCategory) params.set('subCategory', subCategory);
+    if (limit) params.set('limit', String(limit));
 
     fetch(`/api/products?${params}`)
       .then(r => r.json())
@@ -47,7 +48,7 @@ export function useProducts(category?: string, sort?: string, query?: string, su
         });
       })
       .finally(() => setLoading(false));
-  }, [category, sort, query, subCategory]);
+  }, [category, sort, query, subCategory, limit]);
 
   return { products, total, loading, error };
 }

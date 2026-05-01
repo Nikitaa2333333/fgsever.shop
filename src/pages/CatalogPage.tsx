@@ -15,6 +15,8 @@ interface CatalogPageProps {
   onNavigate: (page: string) => void;
 }
 
+const PAGE_SIZE = 48;
+
 export function CatalogPage({ onNavigate }: CatalogPageProps) {
   const [modelsOpen, setModelsOpen] = useState(true);
   const [catsOpen, setCatsOpen] = useState(true);
@@ -22,8 +24,9 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [sort, setSort] = useState('new');
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [displayLimit, setDisplayLimit] = useState(PAGE_SIZE);
 
-  const { products: rawProducts, total, loading } = useProducts(selectedCategory || undefined, sort);
+  const { products: rawProducts, total, loading } = useProducts(selectedCategory || undefined, sort, undefined, undefined, displayLimit);
 
   const categoryProducts: CatalogProduct[] = rawProducts.filter(p => {
     return selectedModels.length === 0 || selectedModels.some(m => p.model.includes(m.replace(' серия', '')));
@@ -33,6 +36,16 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
     setSelectedModels(prev =>
       prev.includes(model) ? prev.filter(m => m !== model) : [...prev, model]
     );
+  };
+
+  const handleCategoryChange = (catId: string) => {
+    setSelectedCategory(prev => prev === catId ? '' : catId);
+    setDisplayLimit(PAGE_SIZE);
+  };
+
+  const handleSortChange = (newSort: string) => {
+    setSort(newSort);
+    setDisplayLimit(PAGE_SIZE);
   };
 
   return (
@@ -129,7 +142,7 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
               {catsOpen && (
                 <div className="border-t border-slate-100 px-3 py-3 flex flex-col gap-0.5">
                   <button
-                    onClick={() => setSelectedCategory('')}
+                    onClick={() => { setSelectedCategory(''); setDisplayLimit(PAGE_SIZE); }}
                     className={`flex items-center justify-between px-4 py-2 text-[13px] rounded-xl transition-colors text-left ${
                       selectedCategory === '' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
                     }`}
@@ -139,7 +152,7 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
                   {categories.map(cat => (
                     <button
                       key={cat.id}
-                      onClick={() => setSelectedCategory(prev => prev === cat.id ? '' : cat.id)}
+                      onClick={() => handleCategoryChange(cat.id)}
                       className={`flex items-center justify-between px-4 py-2 text-[13px] rounded-xl transition-colors text-left ${
                         selectedCategory === cat.id ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
                       }`}
@@ -168,7 +181,7 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
                   <span className="hidden sm:inline text-slate-400">Сортировка:</span>
                   <select
                     value={sort}
-                    onChange={e => setSort(e.target.value)}
+                    onChange={e => handleSortChange(e.target.value)}
                     className="border-none bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer text-[13px]"
                   >
                     <option value="new">Новинки</option>
@@ -245,6 +258,18 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Кнопка "Показать ещё" */}
+            {!loading && displayLimit < total && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={() => setDisplayLimit(prev => prev + PAGE_SIZE)}
+                  className="bg-white border border-slate-200 hover:border-blue-400 text-slate-700 hover:text-blue-600 font-semibold px-8 py-3 rounded-full transition-all"
+                >
+                  Показать ещё ({Math.min(PAGE_SIZE, total - displayLimit)} из {total - displayLimit} оставшихся)
+                </button>
               </div>
             )}
           </div>
