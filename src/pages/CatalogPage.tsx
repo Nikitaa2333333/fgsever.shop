@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, SlidersHorizontal, Grid2x2, List, X } from 'lucide-react';
 import { categories, type CatalogProduct } from '../data';
 import { useProducts } from '../hooks/useProducts';
+import { useGroups } from '../hooks/useGroups';
 
 const BMW_MODELS = [
   '1 серия', '2 серия', '3 серия', '4 серия', '5 серия',
@@ -25,8 +26,11 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
   const [sort, setSort] = useState('new');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [displayLimit, setDisplayLimit] = useState(PAGE_SIZE);
+  const [selectedSubcat, setSelectedSubcat] = useState<string>('');
+  const [subcatsOpen, setSubcatsOpen] = useState(true);
 
-  const { products: rawProducts, total, loading } = useProducts(selectedCategory || undefined, sort, undefined, undefined, displayLimit);
+  const groups = useGroups(selectedCategory);
+  const { products: rawProducts, total, loading } = useProducts(selectedCategory || undefined, sort, undefined, selectedSubcat || undefined, displayLimit);
 
   const categoryProducts: CatalogProduct[] = rawProducts.filter(p => {
     return selectedModels.length === 0 || selectedModels.some(m => p.model.includes(m.replace(' серия', '')));
@@ -40,6 +44,7 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
 
   const handleCategoryChange = (catId: string) => {
     setSelectedCategory(prev => prev === catId ? '' : catId);
+    setSelectedSubcat('');
     setDisplayLimit(PAGE_SIZE);
   };
 
@@ -163,6 +168,47 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
                 </div>
               )}
             </div>
+
+            {/* Подкатегории — появляются когда выбрана категория */}
+            {selectedCategory && groups.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                <button
+                  onClick={() => setSubcatsOpen(v => !v)}
+                  className="w-full flex items-center justify-between px-6 py-4 font-semibold text-[15px] text-slate-800 hover:bg-slate-50 transition-colors"
+                >
+                  Подкатегории
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-300 opacity-50 ${subcatsOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {subcatsOpen && (
+                  <div className="border-t border-slate-100 px-3 py-3 flex flex-col gap-0.5">
+                    <button
+                      onClick={() => { setSelectedSubcat(''); setDisplayLimit(PAGE_SIZE); }}
+                      className={`flex items-center justify-between px-4 py-2 text-[13px] rounded-xl transition-colors text-left ${
+                        selectedSubcat === '' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                      }`}
+                    >
+                      <span>Все</span>
+                      <span className={`text-[11px] font-medium ${selectedSubcat === '' ? 'text-blue-100' : 'text-slate-400'}`}>{total}</span>
+                    </button>
+                    {groups.map(g => (
+                      <button
+                        key={g.subCategory}
+                        onClick={() => { setSelectedSubcat(prev => prev === g.subCategory ? '' : g.subCategory); setDisplayLimit(PAGE_SIZE); }}
+                        className={`flex items-center justify-between px-4 py-2 text-[13px] rounded-xl transition-colors text-left ${
+                          selectedSubcat === g.subCategory ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                        }`}
+                      >
+                        <span>{g.subCategory}</span>
+                        <span className={`text-[11px] font-medium ${selectedSubcat === g.subCategory ? 'text-blue-100' : 'text-slate-400'}`}>{g.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </aside>
 
           {/* Основной контент */}
