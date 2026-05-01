@@ -119,7 +119,7 @@ export function ProductPage({ productId, onNavigate }: ProductPageProps) {
               Главная
             </button>
             <ChevronRight size={13} className="opacity-50" />
-            <span className="hover:text-blue-600 cursor-pointer transition-colors">Каталог</span>
+            <button onClick={() => onNavigate('catalog')} className="hover:text-blue-600 transition-colors">Каталог</button>
             {category && (
               <>
                 <ChevronRight size={13} className="opacity-50" />

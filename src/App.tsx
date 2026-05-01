@@ -9,6 +9,7 @@ import { CategoryPage } from './CategoryPage';
 import { ProductPage } from './ProductPage';
 import { SearchPage } from './pages/SearchPage';
 import { SearchDropdown } from './components/SearchDropdown';
+import { CatalogPage } from './pages/CatalogPage';
 import logo from './logo.png';
 
 function App() {
@@ -198,6 +199,8 @@ function App() {
         <ProductPage productId={Number(currentPage.replace('product-', ''))} onNavigate={navigate} />
       ) : currentPage.startsWith('search-') ? (
         <SearchPage query={currentPage.replace('search-', '')} onNavigate={navigate} />
+      ) : currentPage === 'catalog' ? (
+        <CatalogPage onNavigate={navigate} />
       ) : currentPage !== 'home' ? (
         <CategoryPage
           key={currentPage.includes('--') ? currentPage.split('--')[0] : currentPage}
@@ -241,9 +244,12 @@ function App() {
                     <p className="text-blue-100 text-lg md:text-xl mb-8 font-medium">
                       {slide.subtitle}
                     </p>
-                    <a href="#" className="inline-flex bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-8 rounded-full transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-0.5">
+                    <button
+                      onClick={() => navigate('catalog')}
+                      className="inline-flex bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-8 rounded-full transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-0.5"
+                    >
                       Перейти в каталог
-                    </a>
+                    </button>
                   </div>
                 ))}
               </div>

@@ -1,0 +1,264 @@
+import React, { useState } from 'react';
+import { ChevronDown, SlidersHorizontal, Grid2x2, List, X } from 'lucide-react';
+import { categories, type CatalogProduct } from '../data';
+import { useProducts } from '../hooks/useProducts';
+
+const BMW_MODELS = [
+  '1 серия', '2 серия', '3 серия', '4 серия', '5 серия',
+  '6 серия', '7 серия', '8 серия',
+  'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7',
+  'M2', 'M3', 'M4', 'M5', 'M8',
+  'i3', 'i4', 'i7', 'iX', 'Z4',
+];
+
+interface CatalogPageProps {
+  onNavigate: (page: string) => void;
+}
+
+export function CatalogPage({ onNavigate }: CatalogPageProps) {
+  const [modelsOpen, setModelsOpen] = useState(true);
+  const [catsOpen, setCatsOpen] = useState(true);
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [sort, setSort] = useState('new');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+
+  const { products: rawProducts, total, loading } = useProducts(selectedCategory || undefined, sort);
+
+  const categoryProducts: CatalogProduct[] = rawProducts.filter(p => {
+    return selectedModels.length === 0 || selectedModels.some(m => p.model.includes(m.replace(' серия', '')));
+  });
+
+  const toggleModel = (model: string) => {
+    setSelectedModels(prev =>
+      prev.includes(model) ? prev.filter(m => m !== model) : [...prev, model]
+    );
+  };
+
+  return (
+    <div className="flex-1 pb-24">
+      {/* Breadcrumbs */}
+      <div className="border-b border-slate-100 bg-white overflow-x-auto">
+        <div className="w-full px-4 md:px-10 py-3.5 min-w-max">
+          <nav className="flex items-center gap-2 text-[13px] text-slate-400">
+            <button
+              onClick={() => onNavigate('home')}
+              className="hover:text-blue-600 transition-colors"
+            >
+              Главная
+            </button>
+            <span className="opacity-30 mx-1">›</span>
+            <span className="text-slate-700 font-semibold">Каталог</span>
+          </nav>
+        </div>
+      </div>
+
+      <div className="w-full px-4 md:px-10 pt-6 md:pt-10">
+        <h1 className="font-oswald font-semibold text-4xl md:text-6xl text-slate-900 mb-6 md:mb-10 tracking-tight">
+          Каталог
+        </h1>
+
+        <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start">
+          {/* Sidebar */}
+          <aside className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-4">
+
+            {/* Фильтр по серии BMW */}
+            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+              <button
+                onClick={() => setModelsOpen(v => !v)}
+                className="w-full flex items-center justify-between px-6 py-4 font-semibold text-[15px] text-slate-800 hover:bg-slate-50 transition-colors"
+              >
+                Серия BMW
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform duration-300 opacity-50 ${modelsOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {modelsOpen && (
+                <div className="border-t border-slate-100 px-5 py-4 flex flex-col gap-2.5 max-h-80 overflow-y-auto">
+                  {BMW_MODELS.map(model => (
+                    <label key={model} className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={selectedModels.includes(model)}
+                        onChange={() => toggleModel(model)}
+                        className="w-4 h-4 rounded border-slate-300 accent-blue-600 cursor-pointer"
+                      />
+                      <span className="text-[13px] text-slate-600 group-hover:text-blue-600 transition-colors select-none">
+                        {model}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {selectedModels.length > 0 && (
+                <div className="border-t border-slate-100 px-5 py-3 flex flex-wrap gap-2">
+                  {selectedModels.map(m => (
+                    <span
+                      key={m}
+                      className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-[12px] font-semibold px-3 py-1 rounded-full"
+                    >
+                      {m}
+                      <button onClick={() => toggleModel(m)} className="hover:text-blue-900 transition-colors">
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                  <button
+                    onClick={() => setSelectedModels([])}
+                    className="text-[12px] text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    Сбросить
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Фильтр по категории */}
+            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+              <button
+                onClick={() => setCatsOpen(v => !v)}
+                className="w-full flex items-center justify-between px-6 py-4 font-semibold text-[15px] text-slate-800 hover:bg-slate-50 transition-colors"
+              >
+                Категория
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform duration-300 opacity-50 ${catsOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {catsOpen && (
+                <div className="border-t border-slate-100 px-3 py-3 flex flex-col gap-0.5">
+                  <button
+                    onClick={() => setSelectedCategory('')}
+                    className={`flex items-center justify-between px-4 py-2 text-[13px] rounded-xl transition-colors text-left ${
+                      selectedCategory === '' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    Все категории
+                  </button>
+                  {categories.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(prev => prev === cat.id ? '' : cat.id)}
+                      className={`flex items-center justify-between px-4 py-2 text-[13px] rounded-xl transition-colors text-left ${
+                        selectedCategory === cat.id ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                      }`}
+                    >
+                      {cat.title}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </aside>
+
+          {/* Основной контент */}
+          <div className="flex-1 min-w-0">
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-white rounded-2xl border border-slate-100 px-4 sm:px-6 py-3.5">
+              <div className="flex items-center gap-3 text-[13px] text-slate-500">
+                <SlidersHorizontal size={15} />
+                {loading
+                  ? <span className="font-medium text-slate-400">Загрузка...</span>
+                  : <span className="font-medium text-slate-700">{categoryProducts.length} товаров</span>
+                }
+              </div>
+              <div className="flex items-center justify-between w-full sm:w-auto sm:justify-start gap-4 sm:gap-5">
+                <div className="flex items-center gap-2 text-[13px] text-slate-600">
+                  <span className="hidden sm:inline text-slate-400">Сортировка:</span>
+                  <select
+                    value={sort}
+                    onChange={e => setSort(e.target.value)}
+                    className="border-none bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer text-[13px]"
+                  >
+                    <option value="new">Новинки</option>
+                    <option value="price_asc">Цена ↑</option>
+                    <option value="price_desc">Цена ↓</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setView('grid')}
+                    className={`p-1.5 rounded-lg transition-colors ${view === 'grid' ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    <Grid2x2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => setView('list')}
+                    className={`p-1.5 rounded-lg transition-colors ${view === 'list' ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    <List size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Сетка товаров */}
+            {loading ? (
+              <div className={`grid gap-4 ${view === 'grid' ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden animate-pulse">
+                    <div className="bg-slate-100 aspect-square" />
+                    <div className="p-4 space-y-2">
+                      <div className="h-3 bg-slate-100 rounded w-3/4" />
+                      <div className="h-3 bg-slate-100 rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : categoryProducts.length === 0 ? (
+              <div className="text-center py-20 text-slate-400">
+                <p className="text-lg font-medium">Товары не найдены</p>
+              </div>
+            ) : (
+              <div className={`grid gap-4 ${view === 'grid' ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
+                {categoryProducts.map(product => (
+                  <div
+                    key={product.id}
+                    onClick={() => onNavigate(`product-${product.id}`)}
+                    className={`bg-white rounded-2xl border border-slate-100 overflow-hidden cursor-pointer hover:border-blue-200 hover:shadow-md transition-all duration-200 group ${view === 'list' ? 'flex gap-4 items-start p-4' : ''}`}
+                  >
+                    <div className={`bg-slate-50 overflow-hidden flex-shrink-0 ${view === 'list' ? 'w-28 h-28 rounded-xl' : 'aspect-square'}`}>
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs text-center p-2">
+                          Фото отсутствует
+                        </div>
+                      )}
+                    </div>
+                    <div className={view === 'list' ? 'flex-1 min-w-0' : 'p-3 md:p-4'}>
+                      <p className="text-[11px] text-slate-400 mb-1 truncate">{product.brand} {product.model} {product.year}</p>
+                      <p className={`font-medium text-slate-900 leading-snug mb-2 ${view === 'list' ? 'text-sm' : 'text-[13px] line-clamp-2'}`}>
+                        {product.title}
+                      </p>
+                      {product.sku && (
+                        <p className="text-[11px] text-slate-400 mb-2 font-mono">{product.sku}</p>
+                      )}
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="font-bold text-slate-900 text-[15px]">{product.priceFormatted}</span>
+                        {product.condition && (
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                            product.condition === 'Новый'
+                              ? 'bg-green-50 text-green-700'
+                              : 'bg-amber-50 text-amber-700'
+                          }`}>
+                            {product.condition}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

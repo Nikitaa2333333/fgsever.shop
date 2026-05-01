@@ -63,7 +63,7 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
               Главная
             </button>
             <ChevronRight size={13} className="opacity-50" />
-            <span className="hover:text-blue-600 cursor-pointer transition-colors">Каталог</span>
+            <button onClick={() => onNavigate('catalog')} className="hover:text-blue-600 transition-colors">Каталог</button>
             <ChevronRight size={13} className="opacity-50" />
             <span className="text-slate-700 font-semibold">{category?.title}</span>
           </nav>
