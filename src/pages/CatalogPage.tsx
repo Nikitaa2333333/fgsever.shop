@@ -33,16 +33,16 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
 
   const groups = useGroups(selectedCategory);
   const bodiesByModel = useModels(selectedCategory || undefined);
-  const { products: rawProducts, total, loading } = useProducts(selectedCategory || undefined, sort, undefined, selectedSubcat || undefined, displayLimit);
 
-  const categoryProducts: CatalogProduct[] = rawProducts.filter(p => {
-    if (selectedModels.length === 0) return true;
-    const matchedModel = selectedModels.find(m => p.model.includes(m.replace(' серия', '')));
-    if (!matchedModel) return false;
-    const bodies = selectedBodies[matchedModel];
-    if (!bodies || bodies.length === 0) return true;
-    return p.body ? bodies.includes(p.body) : false;
-  });
+  const allSelectedBodies = Object.values(selectedBodies).flat();
+
+  const { products: categoryProducts, total, loading } = useProducts(
+    selectedCategory || undefined, sort, undefined,
+    selectedSubcat || undefined,
+    displayLimit,
+    selectedModels.length > 0 ? selectedModels.join(',') : undefined,
+    allSelectedBodies.length > 0 ? allSelectedBodies.join(',') : undefined,
+  );
 
   const toggleModel = (model: string) => {
     setSelectedModels(prev => {

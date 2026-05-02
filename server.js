@@ -516,35 +516,48 @@ tr.pr:hover td{background:#fee2e2}
 
 // --- Список товаров с пагинацией и фильтрами ---
 app.get('/api/products', (req, res) => {
-  const { category, sort = 'new', limit = '48', offset = '0', q, subCategory } = req.query;
+  const { category, sort = 'new', limit = '48', offset = '0', q, subCategory, model, body } = req.query;
   try {
     const lim = Math.min(parseInt(limit) || 48, 200);
     const off = parseInt(offset) || 0;
 
-    const conditions = ["imageUrl != ''"];
+    const conditions = ["p.imageUrl != ''"];
     const params = [];
 
-    if (category) { conditions.push('categoryId = ?'); params.push(category); }
-    if (subCategory) { conditions.push('subCategory = ?'); params.push(subCategory); }
+    if (category) { conditions.push('p.categoryId = ?'); params.push(category); }
+    if (subCategory) { conditions.push('p.subCategory = ?'); params.push(subCategory); }
+    // модели и кузова — через запятую (X4,X5 / F26,G05)
+    if (model) {
+      const models = model.split(',').map(m => m.trim()).filter(Boolean);
+      conditions.push(`p.model IN (${models.map(() => '?').join(',')})`);
+      params.push(...models);
+    }
+    if (body) {
+      const bodies = body.split(',').map(b => b.trim()).filter(Boolean);
+      conditions.push(`(COALESCE(NULLIF(p.body,''), c.body) IN (${bodies.map(() => '?').join(',')}))`);
+      params.push(...bodies);
+    }
     if (q) {
-      conditions.push('(titleSearch LIKE ? OR oem LIKE ? OR sku LIKE ? OR crossNumbers LIKE ?)');
+      conditions.push('(p.titleSearch LIKE ? OR p.oem LIKE ? OR p.sku LIKE ? OR p.crossNumbers LIKE ?)');
       const like = `%${q.toLowerCase()}%`;
       params.push(like, like, like, like);
     }
 
     const where = 'WHERE ' + conditions.join(' AND ');
-    const orderMap = { price_asc: 'price ASC', price_desc: 'price DESC', new: 'id DESC' };
-    const order = orderMap[sort] || 'id DESC';
+    const orderMap = { price_asc: 'p.price ASC', price_desc: 'p.price DESC', new: 'p.id DESC' };
+    const order = orderMap[sort] || 'p.id DESC';
 
-    const total = db.prepare(`SELECT COUNT(*) as cnt FROM products ${where}`).get(...params).cnt;
+    const total = db.prepare(`SELECT COUNT(*) as cnt FROM products p LEFT JOIN cars c ON p.donorId = c.id ${where}`).get(...params).cnt;
     const rows  = db.prepare(`SELECT p.*, c.name as donorName, c.brand as donorBrand, c.model as donorModel, c.year as donorYear, c.body as donorBody, c.engine as donorEngine, c.mileage as donorMileage, c.color as donorColor, c.transmission as donorTransmission, c.drive as donorDrive, c.vin as donorVin, c.video as donorVideo, c.steeringWheel as donorSteeringWheel, c.trim as donorTrim
       FROM products p LEFT JOIN cars c ON p.donorId = c.id
-      ${where} ORDER BY p.${order} LIMIT ? OFFSET ?`
+      ${where} ORDER BY ${order} LIMIT ? OFFSET ?`
     ).all(...params, lim, off);
 
     const items = rows.map(r => ({
       id: r.id, sku: r.sku, title: r.title, donorId: r.donorId,
-      brand: r.brand, model: r.model, year: r.year, body: r.body, engine: r.engine,
+      brand: r.brand, model: r.model, year: r.year,
+      // кузов: сначала из товара, если пусто — из донора
+      body: r.body || r.donorBody || '', engine: r.engine,
       position: r.position, color: r.color, oem: r.oem,
       crossNumbers: JSON.parse(r.crossNumbers || '[]'),
       manufacturer: r.manufacturer, description: r.description,
@@ -647,27 +660,20 @@ app.get('/api/status', (req, res) => {
 });
 
 // --- Уникальные модели и кузова для фильтра ---
+// body берётся из товара, а если пусто — из донора (Базон не всегда заполняет Кузов у товаров)
 app.get('/api/models', (req, res) => {
   const { category } = req.query;
   try {
-    let rows;
-    if (category) {
-      rows = db.prepare(
-        `SELECT model, body, COUNT(*) as count
-         FROM products
-         WHERE categoryId = ? AND model != '' AND body != '' AND imageUrl != ''
-         GROUP BY model, body
-         ORDER BY model, body`
-      ).all(category);
-    } else {
-      rows = db.prepare(
-        `SELECT model, body, COUNT(*) as count
-         FROM products
-         WHERE model != '' AND body != '' AND imageUrl != ''
-         GROUP BY model, body
-         ORDER BY model, body`
-      ).all();
-    }
+    const conditions = ["p.model != ''", "p.imageUrl != ''", "COALESCE(NULLIF(p.body,''), c.body) != ''"];
+    const params = [];
+    if (category) { conditions.push('p.categoryId = ?'); params.push(category); }
+    const rows = db.prepare(
+      `SELECT p.model as model, COALESCE(NULLIF(p.body,''), c.body) as body, COUNT(*) as count
+       FROM products p LEFT JOIN cars c ON p.donorId = c.id
+       WHERE ${conditions.join(' AND ')}
+       GROUP BY p.model, body
+       ORDER BY p.model, body`
+    ).all(...params);
     res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e.message });
