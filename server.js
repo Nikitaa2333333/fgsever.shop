@@ -671,8 +671,8 @@ app.get('/api/models', (req, res) => {
       `SELECT p.model as model, COALESCE(NULLIF(p.body,''), c.body) as body, COUNT(*) as count
        FROM products p LEFT JOIN cars c ON p.donorId = c.id
        WHERE ${conditions.join(' AND ')}
-       GROUP BY p.model, body
-       ORDER BY p.model, body`
+       GROUP BY p.model, COALESCE(NULLIF(p.body,''), c.body)
+       ORDER BY p.model, COALESCE(NULLIF(p.body,''), c.body)`
     ).all(...params);
     res.json(rows);
   } catch (e) {
