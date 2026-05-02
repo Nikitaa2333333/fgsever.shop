@@ -26,6 +26,8 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
   const [modelsOpen, setModelsOpen] = useState(true);
   const [subcatsOpen, setSubcatsOpen] = useState(true);
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  // поколения: { 'X5': ['F15', 'G05'], ... }
+  const [selectedBodies, setSelectedBodies] = useState<Record<string, string[]>>({});
   const [selectedSubcat, setSelectedSubcat] = useState<string>(initialSubcat);
   const [sort, setSort] = useState('new');
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -40,14 +42,50 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
 
   const { products: rawProducts, total, loading } = useProducts(categoryId, sort, undefined, selectedSubcat || undefined);
 
+  // уникальные поколения (body) по каждой модели из текущих товаров
+  const bodiesByModel: Record<string, string[]> = {};
+  for (const p of rawProducts) {
+    if (!p.donor?.body) continue;
+    const modelKey = BMW_MODELS.find(m => p.model.includes(m.replace(' серия', '')));
+    if (!modelKey) continue;
+    if (!bodiesByModel[modelKey]) bodiesByModel[modelKey] = [];
+    if (!bodiesByModel[modelKey].includes(p.donor.body)) {
+      bodiesByModel[modelKey].push(p.donor.body);
+    }
+  }
+  // сортируем поколения по алфавиту внутри каждой модели
+  for (const key of Object.keys(bodiesByModel)) {
+    bodiesByModel[key].sort();
+  }
+
   const categoryProducts: CatalogProduct[] = rawProducts.filter(p => {
-    return selectedModels.length === 0 || selectedModels.some(m => p.model.includes(m.replace(' серия', '')));
+    if (selectedModels.length === 0) return true;
+    const matchedModel = selectedModels.find(m => p.model.includes(m.replace(' серия', '')));
+    if (!matchedModel) return false;
+    const bodies = selectedBodies[matchedModel];
+    if (!bodies || bodies.length === 0) return true;
+    return p.donor?.body ? bodies.includes(p.donor.body) : false;
   });
 
   const toggleModel = (model: string) => {
-    setSelectedModels(prev =>
-      prev.includes(model) ? prev.filter(m => m !== model) : [...prev, model]
-    );
+    setSelectedModels(prev => {
+      if (prev.includes(model)) {
+        // снимаем модель — чистим её поколения
+        setSelectedBodies(b => { const next = { ...b }; delete next[model]; return next; });
+        return prev.filter(m => m !== model);
+      }
+      return [...prev, model];
+    });
+  };
+
+  const toggleBody = (model: string, body: string) => {
+    setSelectedBodies(prev => {
+      const cur = prev[model] ?? [];
+      return {
+        ...prev,
+        [model]: cur.includes(body) ? cur.filter(b => b !== body) : [...cur, body],
+      };
+    });
   };
 
   return (
@@ -92,38 +130,72 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
                 />
               </button>
               {modelsOpen && (
-                <div className="border-t border-slate-100 px-5 py-4 flex flex-col gap-2.5 max-h-80 overflow-y-auto">
-                  {BMW_MODELS.map(model => (
-                    <label key={model} className="flex items-center gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={selectedModels.includes(model)}
-                        onChange={() => toggleModel(model)}
-                        className="w-4 h-4 rounded border-slate-300 accent-blue-600 cursor-pointer"
-                      />
-                      <span className="text-[13px] text-slate-600 group-hover:text-blue-600 transition-colors select-none">
-                        {model}
-                      </span>
-                    </label>
-                  ))}
+                <div className="border-t border-slate-100 px-5 py-4 flex flex-col gap-1 max-h-96 overflow-y-auto">
+                  {BMW_MODELS.map(model => {
+                    const isSelected = selectedModels.includes(model);
+                    const bodies = bodiesByModel[model] ?? [];
+                    return (
+                      <div key={model}>
+                        <label className="flex items-center gap-3 cursor-pointer group py-1.5">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleModel(model)}
+                            className="w-4 h-4 rounded border-slate-300 accent-blue-600 cursor-pointer flex-shrink-0"
+                          />
+                          <span className="text-[13px] text-slate-600 group-hover:text-blue-600 transition-colors select-none font-medium">
+                            {model}
+                          </span>
+                          {bodies.length > 0 && (
+                            <span className="ml-auto text-[11px] text-slate-400">{bodies.length}</span>
+                          )}
+                        </label>
+                        {/* поколения — показываем только если модель выбрана и есть данные */}
+                        {isSelected && bodies.length > 0 && (
+                          <div className="ml-7 mb-1 flex flex-col gap-1">
+                            {bodies.map(body => (
+                              <label key={body} className="flex items-center gap-2.5 cursor-pointer group py-1">
+                                <input
+                                  type="checkbox"
+                                  checked={(selectedBodies[model] ?? []).includes(body)}
+                                  onChange={() => toggleBody(model, body)}
+                                  className="w-3.5 h-3.5 rounded border-slate-300 accent-blue-500 cursor-pointer flex-shrink-0"
+                                />
+                                <span className="text-[12px] text-slate-500 group-hover:text-blue-600 transition-colors select-none font-mono">
+                                  {body}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
               {selectedModels.length > 0 && (
                 <div className="border-t border-slate-100 px-5 py-3 flex flex-wrap gap-2">
-                  {selectedModels.map(m => (
-                    <span
-                      key={m}
-                      className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-[12px] font-semibold px-3 py-1 rounded-full"
-                    >
-                      {m}
-                      <button onClick={() => toggleModel(m)} className="hover:text-blue-900 transition-colors">
-                        <X size={11} />
-                      </button>
-                    </span>
-                  ))}
+                  {selectedModels.map(m => {
+                    const bodies = selectedBodies[m] ?? [];
+                    return bodies.length > 0 ? bodies.map(b => (
+                      <span key={`${m}-${b}`} className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-[12px] font-semibold px-3 py-1 rounded-full">
+                        {m} · <span className="font-mono">{b}</span>
+                        <button onClick={() => toggleBody(m, b)} className="hover:text-blue-900 transition-colors">
+                          <X size={11} />
+                        </button>
+                      </span>
+                    )) : (
+                      <span key={m} className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-[12px] font-semibold px-3 py-1 rounded-full">
+                        {m}
+                        <button onClick={() => toggleModel(m)} className="hover:text-blue-900 transition-colors">
+                          <X size={11} />
+                        </button>
+                      </span>
+                    );
+                  })}
                   <button
-                    onClick={() => setSelectedModels([])}
+                    onClick={() => { setSelectedModels([]); setSelectedBodies({}); }}
                     className="text-[12px] text-slate-400 hover:text-red-500 transition-colors"
                   >
                     Сбросить
