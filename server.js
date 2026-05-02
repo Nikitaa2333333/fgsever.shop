@@ -375,7 +375,8 @@ app.get('/admin', (req, res) => {
   all.forEach(r => {
     if (!stats[r.categoryId]) stats[r.categoryId] = { total: 0, problems: 0 };
     stats[r.categoryId].total++;
-    if (r.problem || !r.trigger || !r.subCategory) stats[r.categoryId].problems++;
+    const isProblematic = r.problem || !r.trigger || !r.subCategory;
+    if (isProblematic) stats[r.categoryId].problems++;
   });
   const totalProblems = all.filter(r => r.problem || !r.trigger || !r.subCategory).length;
 
@@ -388,7 +389,7 @@ app.get('/admin', (req, res) => {
   let filtered = all;
   if (cat)          filtered = filtered.filter(r => r.categoryId === cat);
   if (q)            filtered = filtered.filter(r => r.title.toLowerCase().includes(q.toLowerCase()) || r.sku.toLowerCase().includes(q.toLowerCase()));
-  if (prob === '1') filtered = filtered.filter(r => r.problem);
+  if (prob === '1') filtered = filtered.filter(r => r.problem || !r.trigger || !r.subCategory);
 
   const total = filtered.length;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));

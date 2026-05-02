@@ -71,9 +71,10 @@ app.get('/admin', (req, res) => {
   all.forEach(r => {
     if (!stats[r.categoryId]) stats[r.categoryId] = { total: 0, problems: 0 };
     stats[r.categoryId].total++;
-    if (r.problem) stats[r.categoryId].problems++;
+    const isProblematic = r.problem || !r.trigger || !r.subCategory;
+    if (isProblematic) stats[r.categoryId].problems++;
   });
-  const totalProblems = all.filter(r => r.problem).length;
+  const totalProblems = all.filter(r => r.problem || !r.trigger || !r.subCategory).length;
 
   // Частота ключевых слов
   const kwFreq = {};
@@ -84,7 +85,7 @@ app.get('/admin', (req, res) => {
   let filtered = all;
   if (cat)          filtered = filtered.filter(r => r.categoryId === cat);
   if (q)            filtered = filtered.filter(r => r.title.toLowerCase().includes(q.toLowerCase()) || r.sku.toLowerCase().includes(q.toLowerCase()));
-  if (prob === '1') filtered = filtered.filter(r => r.problem);
+  if (prob === '1') filtered = filtered.filter(r => r.problem || !r.trigger || !r.subCategory);
 
   const total = filtered.length;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -112,18 +113,25 @@ app.get('/admin', (req, res) => {
     return '<tr><td class="kc" style="color:' + catColor[c.id] + '">' + catLabel[c.id] + '</td><td>' + kws + '</td></tr>';
   }).join('');
 
-  const tableRows = pageRows.map((r, i) => {
     const color = catColor[r.categoryId] || '#999';
     const label = catLabel[r.categoryId] || r.categoryId;
-    const rowCls = r.problem ? ' class="pr"' : '';
+    const isFallback = !r.trigger;
+    const noSub = !r.subCategory;
+    const issues = [];
+    if (r.problem)  issues.push(r.problem);
+    if (isFallback) issues.push('Нет категории — попал в Механику по умолчанию');
+    if (noSub)      issues.push('Нет подкатегории');
+    const isRed = issues.length > 0;
+    const rowCls = isRed ? ' class="pr"' : '';
     const kw = r.trigger ? '<span class="kt">' + e(r.trigger) + '</span>' : '<span class="kf">фоллбэк</span>';
+    const subCell = noSub ? '<span class="no-sub">не задана</span>' : e(r.subCategory);
     return '<tr' + rowCls + '>'
       + '<td class="tn">' + ((curPage-1)*PAGE_SIZE+i+1) + '</td>'
       + '<td class="tt"><span class="tit">' + e(r.title) + '</span><br><span class="sku">' + e(r.sku) + '</span></td>'
       + '<td><span class="cb" style="background:' + color + '20;color:' + color + ';border:1px solid ' + color + '40">' + label + '</span></td>'
-      + '<td class="ts">' + e(r.subCategory) + '</td>'
+      + '<td class="ts">' + subCell + '</td>'
       + '<td>' + kw + '</td>'
-      + '<td class="tp">' + e(r.problem) + '</td>'
+      + '<td class="tp">' + issues.map(e).join('<br>') + '</td>'
       + '<td class="tpr">' + (r.price>0?r.price.toLocaleString('ru-RU')+' ₽':'—') + '</td>'
       + '</tr>';
   }).join('');
