@@ -145,6 +145,7 @@
 <div class="toolbar">
   <input type="text" id="search" placeholder="Поиск по названию или артикулу..." oninput="applyFilters()">
   <button class="btn" id="btn-problems" onclick="toggleProblems()">⚠ Только проблемные</button>
+  <button class="btn" onclick="sortRowsByProblem()">⇅ Проблемы наверх</button>
   <button class="btn" onclick="filterCat(''); document.getElementById('search').value=''; showProblemsOnly=false; document.getElementById('btn-problems').classList.remove('active'); applyFilters()">Сбросить</button>
   <span class="count-badge" id="visible-count">3033 строк</span>
 </div>
@@ -27542,6 +27543,31 @@ function initProblemSummary() {
   });
 }
 
+function sortRowsByProblem() {
+  const tbody = document.getElementById('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  
+  rows.sort((a, b) => {
+    const aProb = a.dataset.problem === '1' ? 1 : 0;
+    const bProb = b.dataset.problem === '1' ? 1 : 0;
+    
+    if (aProb !== bProb) {
+      return bProb - aProb; // Проблемные (1) выше беспроблемных (0)
+    }
+    
+    // Если оба проблемные или оба нет, сохраняем порядок по ID (#)
+    const aNum = parseInt(a.querySelector('.td-num').textContent);
+    const bNum = parseInt(b.querySelector('.td-num').textContent);
+    return aNum - bNum;
+  });
+  
+  const fragment = document.createDocumentFragment();
+  rows.forEach(row => fragment.appendChild(row));
+  tbody.appendChild(fragment);
+}
+
+// Инициализация
+sortRowsByProblem();
 initProblemSummary();
 document.getElementById('stat-all').classList.add('active');
 </script>
