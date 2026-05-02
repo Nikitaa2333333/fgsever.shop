@@ -83,16 +83,18 @@ URL обновляются автоматически на стороне Баз
 
 ## Прогресс разработки
 
-> Обновляется после каждой завершённой задачи. Последнее обновление: 2026-04-30.
+> Обновляется после каждой завершённой задачи. Последнее обновление: 2026-05-02.
 
 ### Блок A — Инфраструктура БД (SQLite) ✅ ЗАВЕРШЁН
 - [x] Установка `better-sqlite3`
 - [x] Сохранение CSV в SQLite при синхронизации с Базон (`db.js` + `syncFromBazon()`)
-- [x] Перевод `/api/products` на SQL-запросы
-- [x] Перевод `/api/groups` на SQL-запросы
+- [x] `server.js`: все API роуты реализованы на SQLite (`/api/products`, `/api/products/:id`, `/api/groups`, `/api/search-groups`, `/api/cars`, `/api/status`)
 - [x] `server.js`: поле `subCategory` (keyword-matching по названию)
 - [x] `server.js`: эндпоинт `GET /api/groups?category=...`
 - [x] `src/data.ts`: добавить `subCategory?: string` в `CatalogProduct`
+- [x] `db.js`: индексы на categoryId, subCategory, oem, sku, imageUrl для быстрой фильтрации
+
+> ⚠️ До 2026-05-02 API роутов не было — фронт грузил весь catalog.json (~3000 товаров). Исправлено.
 
 ### Блок B — Поиск ✅ ЗАВЕРШЁН
 - [x] `src/components/SearchDropdown.tsx` — live dropdown создан
@@ -105,6 +107,7 @@ URL обновляются автоматически на стороне Баз
 - [x] `src/CategoryPage.tsx` — боковой фильтр по подкатегории
 - [x] fix: `subCategory` добавлен в deps `useProducts` — смена подкатегории триггерит новый запрос
 - [x] fix: `key={categoryId}` на `CategoryPage` в `App.tsx` — сброс фильтров при смене категории
+- [x] Вложенный фильтр поколений BMW (F15, G05...) в `CategoryPage.tsx` и `CatalogPage.tsx` — `/api/models?category=` → `useModels.ts`
 
 ### Блок D — Карточка товара ✅ ЗАВЕРШЁН
 - [x] Галерея фотографий (до 25 штук)
@@ -138,29 +141,12 @@ URL обновляются автоматически на стороне Баз
 
 **ГЛОБАЛЬНЫЙ ШАГ СЕЙЧАС (Этап 2):**  
 Кнопка «Заказать» — приём заявок от покупателей.  
-*Этап 1.5 (SQLite + поиск + подкатегории + карточка товара) — завершён и задеплоен на Railway.*
+*Этап 1.5 (SQLite + поиск + подкатегории + карточка товара + API роуты) — завершён и задеплоен на Railway.*
 
-### Блок A — Инфраструктура БД (Текущая задача)
-- Установка `sqlite3` или `better-sqlite3`
-- Настройка `server.js` на сохранение спарсенных CSV прямо в `.sqlite` файл
-- Перевод API (`/api/products`, `/api/groups`) на SQL-запросы вместо фильтрации массивов в памяти
-- `server.js`: добавить `subCategory` в объект продукта (keyword-matching по названию)
-- `server.js`: новый эндпоинт `GET /api/groups?category=...`
-- `src/data.ts`: добавить `subCategory?: string` в тип `CatalogProduct`
-
-### Блок B — Поиск (ВЫСШИЙ ПРИОРИТЕТ)
-- `src/App.tsx`: добавить `searchQuery` state, подключить `onChange` и `onKeyDown` к input
-- `src/components/SearchDropdown.tsx`: live dropdown, макс 5 результатов, дебаунс 300мс
-- `src/pages/SearchPage.tsx`: страница результатов с фильтрами (категория, модель, состояние, цена)
-- Поиск работает **одновременно** по: OEM-номеру, артикулу, кросс-номерам, названию
-
-### Блок C — Динамические подкатегории (UI)
-- `src/hooks/useGroups.ts`: хук для загрузки подкатегорий через `/api/groups`
-- `src/CategoryPage.tsx`: боковой фильтр по подкатегории
-
-### Блок D — Кнопка «Заказать» (Phase 2)
-- Корзина, OrderModal, POST /api/order — следующий этап
-- Кнопки корзины и аккаунта **убраны** из шапки до Phase 2
+### Блок F — Кнопка «Заказать» (СЛЕДУЮЩИЙ ЭТАП)
+- `OrderModal` — модальное окно заявки
+- `POST /api/order` — приём заявки, лог в `orders.log`
+- Опционально: отправка в Telegram
 
 ---
 
