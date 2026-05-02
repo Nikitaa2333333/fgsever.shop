@@ -31,9 +31,17 @@ const KNOWN_BODIES: Record<string, string[]> = {
   'Z4': ['E85', 'E89', 'G29'],
 };
 
-// Возвращает поколения из БД + статические известные, объединённые и отсортированные
-export function useModels(categoryId?: string): Record<string, string[]> {
-  const [result, setResult] = useState<Record<string, string[]>>(KNOWN_BODIES);
+export interface ModelsResult {
+  bodies: Record<string, string[]>;   // модель → список поколений
+  counts: Record<string, number>;     // модель → кол-во товаров
+}
+
+// Возвращает поколения из БД + статические известные, и счётчики товаров по моделям
+export function useModels(categoryId?: string): ModelsResult {
+  const [result, setResult] = useState<ModelsResult>({
+    bodies: KNOWN_BODIES,
+    counts: {},
+  });
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -41,20 +49,23 @@ export function useModels(categoryId?: string): Record<string, string[]> {
     fetch(`/api/models?${params}`)
       .then(r => r.json())
       .then((rows: ModelBodyRow[]) => {
-        // Начинаем с известных поколений, добавляем из БД если их нет
-        const map: Record<string, string[]> = {};
-        for (const [model, bodies] of Object.entries(KNOWN_BODIES)) {
-          map[model] = [...bodies];
+        const bodies: Record<string, string[]> = {};
+        const counts: Record<string, number> = {};
+
+        // Начинаем с известных поколений
+        for (const [model, bs] of Object.entries(KNOWN_BODIES)) {
+          bodies[model] = [...bs];
         }
+        // Добавляем из БД и считаем товары
         for (const row of rows) {
-          if (!map[row.model]) map[row.model] = [];
-          if (!map[row.model].includes(row.body)) map[row.model].push(row.body);
+          if (!bodies[row.model]) bodies[row.model] = [];
+          if (!bodies[row.model].includes(row.body)) bodies[row.model].push(row.body);
+          counts[row.model] = (counts[row.model] || 0) + row.count;
         }
-        // Сортируем поколения внутри каждой модели
-        for (const key of Object.keys(map)) map[key].sort();
-        setResult(map);
+        for (const key of Object.keys(bodies)) bodies[key].sort();
+        setResult({ bodies, counts });
       })
-      .catch(() => setResult(KNOWN_BODIES));
+      .catch(() => setResult({ bodies: KNOWN_BODIES, counts: {} }));
   }, [categoryId]);
 
   return result;

@@ -34,7 +34,7 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
   const [subcatsOpen, setSubcatsOpen] = useState(true);
 
   const groups = useGroups(selectedCategory);
-  const bodiesByModel = useModels(selectedCategory || undefined);
+  const { bodies: bodiesByModel, counts: modelCounts } = useModels(selectedCategory || undefined);
 
   const allSelectedBodies = Object.values(selectedBodies).flat();
 
@@ -133,9 +133,9 @@ export function CatalogPage({ onNavigate }: CatalogPageProps) {
                           <span className="text-[13px] text-slate-600 group-hover:text-blue-600 transition-colors select-none font-medium">
                             {model}
                           </span>
-                          {bodies.length > 0 && (
-                            <span className="ml-auto text-[11px] text-slate-400">{bodies.length}</span>
-                          )}
+                          {modelCounts[toDbModel(model)] ? (
+                            <span className="ml-auto text-[11px] text-slate-400">{modelCounts[toDbModel(model)]}</span>
+                          ) : null}
                         </label>
                         {isSelected && bodies.length > 0 && (
                           <div className="ml-7 mb-1 flex flex-col gap-1">

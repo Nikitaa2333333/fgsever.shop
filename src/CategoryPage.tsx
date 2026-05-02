@@ -44,7 +44,7 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
   const category = categories.find(c => c.id === categoryId);
   const groups = useGroups(categoryId);
   // все модели+кузова из БД (не зависит от пагинации)
-  const bodiesByModel = useModels(categoryId);
+  const { bodies: bodiesByModel, counts: modelCounts } = useModels(categoryId);
 
   // собираем все выбранные кузова по всем моделям
   const allSelectedBodies = Object.values(selectedBodies).flat();
@@ -136,9 +136,9 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
                           <span className="text-[13px] text-slate-600 group-hover:text-blue-600 transition-colors select-none font-medium">
                             {model}
                           </span>
-                          {bodies.length > 0 && (
-                            <span className="ml-auto text-[11px] text-slate-400">{bodies.length}</span>
-                          )}
+                          {modelCounts[toDbModel(model)] ? (
+                            <span className="ml-auto text-[11px] text-slate-400">{modelCounts[toDbModel(model)]}</span>
+                          ) : null}
                         </label>
                         {/* поколения — показываем только если модель выбрана и есть данные */}
                         {isSelected && bodies.length > 0 && (
