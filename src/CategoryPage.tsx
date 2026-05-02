@@ -16,6 +16,9 @@ const BMW_MODELS = [
   'i3', 'i4', 'i7', 'iX', 'Z4',
 ];
 
+// В БД модели хранятся без " серия": "5 серия" → "5", "X5" → "X5"
+const toDbModel = (m: string) => m.replace(' серия', '');
+
 interface CategoryPageProps {
   categoryId: string;
   initialSubcat?: string;
@@ -50,7 +53,7 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
     categoryId, sort, undefined,
     selectedSubcat || undefined,
     undefined,
-    selectedModels.length > 0 ? selectedModels.join(',') : undefined,
+    selectedModels.length > 0 ? selectedModels.map(toDbModel).join(',') : undefined,
     allSelectedBodies.length > 0 ? allSelectedBodies.join(',') : undefined,
   );
 
@@ -120,7 +123,7 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
                 <div className="border-t border-slate-100 px-5 py-4 flex flex-col gap-1 max-h-96 overflow-y-auto">
                   {BMW_MODELS.map(model => {
                     const isSelected = selectedModels.includes(model);
-                    const bodies = bodiesByModel[model] ?? [];
+                    const bodies = bodiesByModel[toDbModel(model)] ?? [];
                     return (
                       <div key={model}>
                         <label className="flex items-center gap-3 cursor-pointer group py-1.5">
