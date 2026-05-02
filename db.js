@@ -73,6 +73,18 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_outOfStock ON products(outOfStock);
   CREATE INDEX IF NOT EXISTS idx_donor ON products(donorId);
   CREATE INDEX IF NOT EXISTS idx_title_search ON products(titleSearch);
+
+  -- Ручные правки категорий и подкатегорий (переживают пересинхронизацию)
+  CREATE TABLE IF NOT EXISTS overrides (
+    sku TEXT PRIMARY KEY,
+    categoryId TEXT NOT NULL,
+    subCategory TEXT DEFAULT '',
+    note TEXT DEFAULT '',
+    updatedAt TEXT NOT NULL
+  );
 `);
+
+// Миграции — безопасно добавляют колонки если их нет
+try { db.exec('ALTER TABLE overrides ADD COLUMN subCategory TEXT DEFAULT ""'); } catch {}
 
 export default db;
