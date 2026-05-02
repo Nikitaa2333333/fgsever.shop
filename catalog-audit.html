@@ -63,6 +63,16 @@
   .cat-wheels-rims-tires { background: #f5f5f5; color: #212121; }
 
   .hidden { display: none; }
+  .problem-summary { display: flex; gap: 8px; padding: 12px 24px; flex-wrap: wrap; background: #fff; border-bottom: 1px solid #e0e0e0; }
+  .problem-badge-summary { 
+    display: inline-block; padding: 6px 12px; border-radius: 16px; 
+    font-size: 11px; background: #fdecea; color: #c0392b; 
+    font-weight: 600; cursor: pointer; border: 1px solid #f5c6cb;
+    transition: all .15s;
+    box-shadow: 0 1px 2px rgba(192, 57, 43, 0.1);
+  }
+  .problem-badge-summary:hover { background: #f8d7da; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(192, 57, 43, 0.2); }
+  .problem-badge-summary.active { background: #c0392b; color: white; border-color: #c0392b; }
 </style>
 </head>
 <body>
@@ -129,6 +139,8 @@
     
   </div>
 </div>
+
+<div class="problem-summary" id="problem-summary"></div>
 
 <div class="toolbar">
   <input type="text" id="search" placeholder="Поиск по названию или артикулу..." oninput="applyFilters()">
@@ -27493,6 +27505,44 @@ function applyFilters() {
   document.getElementById('visible-count').textContent = visible + ' строк';
 }
 
+function initProblemSummary() {
+  const problems = new Set();
+  document.querySelectorAll('.problem-badge').forEach(b => {
+    const text = b.getAttribute('title') || b.textContent.replace('⚠ ', '').trim();
+    if (text) problems.add(text);
+  });
+  
+  const container = document.getElementById('problem-summary');
+  if (!container || problems.size === 0) {
+    if (container) container.style.display = 'none';
+    return;
+  }
+  
+  problems.forEach(p => {
+    const span = document.createElement('span');
+    span.className = 'problem-badge-summary';
+    span.textContent = '⚠ ' + p;
+    span.onclick = function() {
+      const isActive = this.classList.contains('active');
+      document.querySelectorAll('.problem-badge-summary').forEach(b => b.classList.remove('active'));
+      
+      if (isActive) {
+        document.getElementById('search').value = '';
+        showProblemsOnly = false;
+      } else {
+        this.classList.add('active');
+        document.getElementById('search').value = p;
+        showProblemsOnly = true;
+      }
+      
+      document.getElementById('btn-problems').classList.toggle('active', showProblemsOnly);
+      applyFilters();
+    };
+    container.appendChild(span);
+  });
+}
+
+initProblemSummary();
 document.getElementById('stat-all').classList.add('active');
 </script>
 </body>
