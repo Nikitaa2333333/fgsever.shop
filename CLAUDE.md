@@ -52,10 +52,11 @@ URL обновляются автоматически на стороне Баз
 ### Порядок синхронизации
 
 1. `syncFromBazon()` при старте + каждые 20 минут
-2. Парсинг CSV → `carsMap` (доноры) + `newCatalog` (товары)
-3. Товары без фото (`imageUrl === ''`) исключаются из каталога (1 из 3034 товаров Базон не имеет фото)
-4. Результат → in-memory `catalog[]`
+2. Парсинг CSV → записи доноров + товаров
+3. Всё сохраняется в SQLite (`fgsever.sqlite`) через транзакцию — таблицы `cars` и `products`
+4. Товары без фото (`imageUrl === ''`) не исключаются при записи, но фильтруются в API (`WHERE imageUrl != ''`)
 5. Реальная статистика фото: у товаров с фото — от 2 до 25 штук (среднее ~4–6)
+6. Поле `body` у товара: сначала из CSV `Кузов`, если пусто — подставляется из донора через `COALESCE` в SQL
 
 ---
 
@@ -184,19 +185,20 @@ new car/
 └── src/
     ├── App.tsx                  # Корневой компонент: роутинг, глобальный стейт
     ├── data.ts                  # Типы CatalogProduct + статические данные категорий
+    ├── CategoryPage.tsx         # Каталог по категории — фильтры, подкатегории, поколения
+    ├── ProductPage.tsx          # Карточка товара + донор + галерея
     ├── vite-env.d.ts            # Типы для PNG/JPG импортов
     ├── pages/
-    │   ├── CategoryPage.tsx     # Каталог по категории с фильтрами
-    │   ├── ProductPage.tsx      # Карточка товара + донор + галерея
-    │   └── SearchPage.tsx       # ← создать: страница результатов поиска
+    │   ├── CatalogPage.tsx      # Общий каталог — все категории + фильтры
+    │   └── SearchPage.tsx       # Страница результатов поиска
     ├── components/
-    │   ├── SearchDropdown.tsx   # ← создать: live dropdown поиска
-    │   └── ProductCard.tsx      # ← создать: вынести из CategoryPage
+    │   └── SearchDropdown.tsx   # Live dropdown поиска в шапке
     ├── hooks/
-    │   ├── useProducts.ts       # Загрузка товаров через /api/products
-    │   └── useGroups.ts         # ← создать: подкатегории через /api/groups
-    └── generated/               # Авто-генерируемые файлы (npm run convert)
-        ├── catalog.json         # Каталог для фронтенда
+    │   ├── useProducts.ts       # Загрузка товаров через /api/products (category, model, body, subCategory...)
+    │   ├── useGroups.ts         # Подкатегории через /api/groups
+    │   └── useModels.ts         # Модели + поколения через /api/models
+    └── generated/               # Авто-генерируемые файлы (npm run convert), в .gitignore
+        ├── catalog.json         # Фоллбэк для фронтенда если API недоступен
         ├── products.json        # Полные данные товаров
         └── cars.json            # Доноры
 ```
@@ -207,10 +209,11 @@ new car/
 
 | Метод | URL | Описание |
 |-------|-----|----------|
-| GET | `/api/products` | Список товаров. Параметры: `category`, `sort`, `limit`, `offset`, `q` |
+| GET | `/api/products` | Список товаров. Параметры: `category`, `sort`, `limit`, `offset`, `q`, `subCategory`, `model` (через запятую), `body` (через запятую) |
 | GET | `/api/products/:id` | Один товар |
 | GET | `/api/groups?category=` | Подкатегории для раздела |
 | GET | `/api/search-groups?q=` | Группировка результатов поиска по категориям (количество товаров) |
+| GET | `/api/models?category=` | Уникальные пары модель+кузов для фильтра (body из донора если у товара пусто) |
 | GET | `/api/cars` | Список доноров |
 | GET | `/api/status` | Статус синхронизации с Базон |
 | POST | `/api/order` | Заявка на товар ← создать |
