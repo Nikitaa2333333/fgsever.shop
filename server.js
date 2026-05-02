@@ -514,6 +514,138 @@ tr.pr:hover td{background:#fee2e2}
     + '</body></html>');
 });
 
+// --- Список товаров с пагинацией и фильтрами ---
+app.get('/api/products', (req, res) => {
+  const { category, sort = 'new', limit = '48', offset = '0', q, subCategory } = req.query;
+  try {
+    const lim = Math.min(parseInt(limit) || 48, 200);
+    const off = parseInt(offset) || 0;
+
+    const conditions = ["imageUrl != ''"];
+    const params = [];
+
+    if (category) { conditions.push('categoryId = ?'); params.push(category); }
+    if (subCategory) { conditions.push('subCategory = ?'); params.push(subCategory); }
+    if (q) {
+      conditions.push('(titleSearch LIKE ? OR oem LIKE ? OR sku LIKE ? OR crossNumbers LIKE ?)');
+      const like = `%${q.toLowerCase()}%`;
+      params.push(like, like, like, like);
+    }
+
+    const where = 'WHERE ' + conditions.join(' AND ');
+    const orderMap = { price_asc: 'price ASC', price_desc: 'price DESC', new: 'id DESC' };
+    const order = orderMap[sort] || 'id DESC';
+
+    const total = db.prepare(`SELECT COUNT(*) as cnt FROM products ${where}`).get(...params).cnt;
+    const rows  = db.prepare(`SELECT p.*, c.name as donorName, c.brand as donorBrand, c.model as donorModel, c.year as donorYear, c.body as donorBody, c.engine as donorEngine, c.mileage as donorMileage, c.color as donorColor, c.transmission as donorTransmission, c.drive as donorDrive, c.vin as donorVin, c.video as donorVideo, c.steeringWheel as donorSteeringWheel, c.trim as donorTrim
+      FROM products p LEFT JOIN cars c ON p.donorId = c.id
+      ${where} ORDER BY p.${order} LIMIT ? OFFSET ?`
+    ).all(...params, lim, off);
+
+    const items = rows.map(r => ({
+      id: r.id, sku: r.sku, title: r.title, donorId: r.donorId,
+      brand: r.brand, model: r.model, year: r.year, body: r.body, engine: r.engine,
+      position: r.position, color: r.color, oem: r.oem,
+      crossNumbers: JSON.parse(r.crossNumbers || '[]'),
+      manufacturer: r.manufacturer, description: r.description,
+      photos: JSON.parse(r.photos || '[]'),
+      imageUrl: r.imageUrl, conditionRaw: r.conditionRaw, condition: r.condition,
+      isNew: !!r.isNew, price: r.price, priceFormatted: r.priceFormatted,
+      warehouse: r.warehouse, outOfStock: !!r.outOfStock,
+      categoryId: r.categoryId, subCategory: r.subCategory,
+      donor: r.donorName ? {
+        name: r.donorName, brand: r.donorBrand, model: r.donorModel, year: r.donorYear,
+        body: r.donorBody, engine: r.donorEngine, mileage: r.donorMileage,
+        color: r.donorColor, transmission: r.donorTransmission, drive: r.donorDrive,
+        vin: r.donorVin, video: r.donorVideo, steeringWheel: r.donorSteeringWheel,
+        trim: r.donorTrim,
+      } : null,
+    }));
+
+    res.json({ items, total });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Один товар по id ---
+app.get('/api/products/:id', (req, res) => {
+  try {
+    const r = db.prepare(`SELECT p.*, c.name as donorName, c.brand as donorBrand, c.model as donorModel, c.year as donorYear, c.body as donorBody, c.engine as donorEngine, c.mileage as donorMileage, c.color as donorColor, c.transmission as donorTransmission, c.drive as donorDrive, c.vin as donorVin, c.video as donorVideo, c.steeringWheel as donorSteeringWheel, c.trim as donorTrim
+      FROM products p LEFT JOIN cars c ON p.donorId = c.id
+      WHERE p.id = ?`).get(req.params.id);
+    if (!r) return res.status(404).json({ error: 'Не найдено' });
+    res.json({
+      id: r.id, sku: r.sku, title: r.title, donorId: r.donorId,
+      brand: r.brand, model: r.model, year: r.year, body: r.body, engine: r.engine,
+      position: r.position, color: r.color, oem: r.oem,
+      crossNumbers: JSON.parse(r.crossNumbers || '[]'),
+      manufacturer: r.manufacturer, description: r.description,
+      photos: JSON.parse(r.photos || '[]'),
+      imageUrl: r.imageUrl, conditionRaw: r.conditionRaw, condition: r.condition,
+      isNew: !!r.isNew, price: r.price, priceFormatted: r.priceFormatted,
+      warehouse: r.warehouse, outOfStock: !!r.outOfStock,
+      categoryId: r.categoryId, subCategory: r.subCategory,
+      donor: r.donorName ? {
+        name: r.donorName, brand: r.donorBrand, model: r.donorModel, year: r.donorYear,
+        body: r.donorBody, engine: r.donorEngine, mileage: r.donorMileage,
+        color: r.donorColor, transmission: r.donorTransmission, drive: r.donorDrive,
+        vin: r.donorVin, video: r.donorVideo, steeringWheel: r.donorSteeringWheel,
+        trim: r.donorTrim,
+      } : null,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Подкатегории для раздела ---
+app.get('/api/groups', (req, res) => {
+  const { category } = req.query;
+  try {
+    const conditions = ["imageUrl != ''", "subCategory != ''"];
+    const params = [];
+    if (category) { conditions.push('categoryId = ?'); params.push(category); }
+    const rows = db.prepare(
+      `SELECT subCategory, COUNT(*) as count FROM products WHERE ${conditions.join(' AND ')} GROUP BY subCategory ORDER BY count DESC`
+    ).all(...params);
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Группировка результатов поиска по категориям ---
+app.get('/api/search-groups', (req, res) => {
+  const { q = '' } = req.query;
+  try {
+    const like = `%${q.toLowerCase()}%`;
+    const rows = db.prepare(
+      `SELECT categoryId, COUNT(*) as count FROM products
+       WHERE imageUrl != '' AND (titleSearch LIKE ? OR oem LIKE ? OR sku LIKE ? OR crossNumbers LIKE ?)
+       GROUP BY categoryId ORDER BY count DESC`
+    ).all(like, like, like, like);
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Доноры ---
+app.get('/api/cars', (req, res) => {
+  try {
+    res.json(db.prepare('SELECT * FROM cars ORDER BY brand, model').all());
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- Статус синхронизации ---
+app.get('/api/status', (req, res) => {
+  const count = db.prepare("SELECT COUNT(*) as cnt FROM products WHERE imageUrl != ''").get().cnt;
+  res.json({ lastSync, syncError, count });
+});
+
 // --- Уникальные модели и кузова для фильтра ---
 app.get('/api/models', (req, res) => {
   const { category } = req.query;

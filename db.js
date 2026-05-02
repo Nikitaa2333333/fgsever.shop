@@ -73,6 +73,10 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_outOfStock ON products(outOfStock);
   CREATE INDEX IF NOT EXISTS idx_donor ON products(donorId);
   CREATE INDEX IF NOT EXISTS idx_title_search ON products(titleSearch);
+  CREATE INDEX IF NOT EXISTS idx_image ON products(imageUrl);
+  CREATE INDEX IF NOT EXISTS idx_cat_sub ON products(categoryId, subCategory);
+  CREATE INDEX IF NOT EXISTS idx_oem ON products(oem);
+  CREATE INDEX IF NOT EXISTS idx_sku ON products(sku);
 
   -- Ручные правки категорий и подкатегорий (переживают пересинхронизацию)
   CREATE TABLE IF NOT EXISTS overrides (
