@@ -11,6 +11,7 @@ import { SearchPage } from './pages/SearchPage';
 import { SearchDropdown } from './components/SearchDropdown';
 import { CatalogPage } from './pages/CatalogPage';
 import logo from './logo.png';
+import logoFull from './logo-full.svg';
 
 function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -62,7 +63,7 @@ function App() {
     <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-slate-50 normal-case">
       
       <div className="bg-blue-600 text-white text-[13px] py-2 px-4 text-center font-medium">
-        Оригинальные запчасти BMW и Mini • Быстрая доставка по всей России • Более 200 000 позиций в каталоге
+        Оригинальные запчасти BMW и Mini • Быстрая доставка по всей России • Parts-sever
       </div>
 
       <header className="bg-white text-slate-800 border-b border-slate-200 sticky top-0 z-50 transition-all shadow-sm">
@@ -76,7 +77,7 @@ function App() {
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
             <div className="flex items-center cursor-pointer group" onClick={() => navigate('home')}>
-              <img src={logo} alt="FG SEVER" className="h-10 w-auto" />
+              <img src={logoFull} alt="FG SEVER" className="h-10 w-auto" />
             </div>
           </div>
 
@@ -114,7 +115,7 @@ function App() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-slate-400 font-medium">Связаться с нами</span>
-                <a href="tel:+74991100045" className="text-sm font-bold text-slate-800 hover:text-blue-600 transition-colors">+7 (499) 110–00–45</a>
+                <a href="tel:+79360010045" className="text-sm font-bold text-slate-800 hover:text-blue-600 transition-colors">+7 (936) 001–00–45</a>
               </div>
             </div>
           </div>
@@ -385,9 +386,7 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
             <div>
               <div className="flex items-center mb-6">
-                <div className="font-oswald font-bold text-3xl text-white tracking-widest uppercase">
-                  FGSEVER
-                </div>
+                <img src={logoFull} alt="FG SEVER" className="h-10 w-auto brightness-0 invert" />
               </div>
               <p className="text-slate-400 text-sm mb-6 leading-relaxed">
                 С 2014 года мы специализируемся на ремонте, тюнинге и дооснащении автомобилей BMW. Являемся экспертами в своем деле и гарантируем высокое качество работ.
@@ -436,23 +435,23 @@ function App() {
                   ул. Декабристов, 45Бс2
                 </p>
                 
-                <a href="tel:+74991100045" className="flex items-center gap-3 text-slate-300 hover:text-blue-500 transition-colors group">
+                <a href="tel:+79360010045" className="flex items-center gap-3 text-slate-300 hover:text-blue-500 transition-colors group">
                   <div className="w-10 h-10 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center group-hover:border-blue-500 transition-colors">
                     <Phone size={16} />
                   </div>
                   <div>
                     <span className="block text-[11px] text-slate-500 font-medium mb-0.5">Телефон</span>
-                    <span className="font-semibold text-sm">+7 (499) 110–00–45</span>
+                    <span className="font-semibold text-sm">+7 (936) 001–00–45</span>
                   </div>
                 </a>
 
-                <a href="mailto:riverdale@inbox.ru" className="flex items-center gap-3 text-slate-300 hover:text-blue-500 transition-colors group">
+                <a href="mailto:parts.sever@gmail.com" className="flex items-center gap-3 text-slate-300 hover:text-blue-500 transition-colors group">
                   <div className="w-10 h-10 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center group-hover:border-blue-500 transition-colors">
                     <Mail size={16} />
                   </div>
                   <div>
                     <span className="block text-[11px] text-slate-500 font-medium mb-0.5">Email</span>
-                    <span className="font-semibold text-sm">riverdale@inbox.ru</span>
+                    <span className="font-semibold text-sm">parts.sever@gmail.com</span>
                   </div>
                 </a>
               </div>
@@ -461,7 +460,7 @@ function App() {
 
           <div className="border-t border-slate-800 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-slate-500 text-xs">
-              © {new Date().getFullYear()} FGSEVER. Все права защищены.
+              © {new Date().getFullYear()} Parts-sever. Все права защищены.
             </p>
             <div className="flex items-center gap-4 text-slate-600">
               <span className="text-sm font-semibold italic">Visa</span>
