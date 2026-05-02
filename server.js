@@ -514,6 +514,34 @@ tr.pr:hover td{background:#fee2e2}
     + '</body></html>');
 });
 
+// --- Уникальные модели и кузова для фильтра ---
+app.get('/api/models', (req, res) => {
+  const { category } = req.query;
+  try {
+    let rows;
+    if (category) {
+      rows = db.prepare(
+        `SELECT model, body, COUNT(*) as count
+         FROM products
+         WHERE categoryId = ? AND model != '' AND body != '' AND imageUrl != ''
+         GROUP BY model, body
+         ORDER BY model, body`
+      ).all(category);
+    } else {
+      rows = db.prepare(
+        `SELECT model, body, COUNT(*) as count
+         FROM products
+         WHERE model != '' AND body != '' AND imageUrl != ''
+         GROUP BY model, body
+         ORDER BY model, body`
+      ).all();
+    }
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // --- Serve built React app ---
 app.use(express.static(join(__dirname, 'dist')));
 app.get('*', (_, res) => res.sendFile(join(__dirname, 'dist/index.html')));

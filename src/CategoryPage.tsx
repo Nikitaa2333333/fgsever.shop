@@ -6,6 +6,7 @@ import {
 import { categories, type CatalogProduct } from './data';
 import { useProducts } from './hooks/useProducts';
 import { useGroups } from './hooks/useGroups';
+import { useModels } from './hooks/useModels';
 
 const BMW_MODELS = [
   '1 серия', '2 серия', '3 серия', '4 серия', '5 серия',
@@ -39,24 +40,10 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
 
   const category = categories.find(c => c.id === categoryId);
   const groups = useGroups(categoryId);
+  // все модели+кузова из БД (не зависит от пагинации)
+  const bodiesByModel = useModels(categoryId);
 
   const { products: rawProducts, total, loading } = useProducts(categoryId, sort, undefined, selectedSubcat || undefined);
-
-  // уникальные поколения (body) по каждой модели из текущих товаров
-  const bodiesByModel: Record<string, string[]> = {};
-  for (const p of rawProducts) {
-    if (!p.donor?.body) continue;
-    const modelKey = BMW_MODELS.find(m => p.model.includes(m.replace(' серия', '')));
-    if (!modelKey) continue;
-    if (!bodiesByModel[modelKey]) bodiesByModel[modelKey] = [];
-    if (!bodiesByModel[modelKey].includes(p.donor.body)) {
-      bodiesByModel[modelKey].push(p.donor.body);
-    }
-  }
-  // сортируем поколения по алфавиту внутри каждой модели
-  for (const key of Object.keys(bodiesByModel)) {
-    bodiesByModel[key].sort();
-  }
 
   const categoryProducts: CatalogProduct[] = rawProducts.filter(p => {
     if (selectedModels.length === 0) return true;
@@ -64,7 +51,7 @@ export function CategoryPage({ categoryId, initialSubcat = '', onNavigate }: Cat
     if (!matchedModel) return false;
     const bodies = selectedBodies[matchedModel];
     if (!bodies || bodies.length === 0) return true;
-    return p.donor?.body ? bodies.includes(p.donor.body) : false;
+    return p.body ? bodies.includes(p.body) : false;
   });
 
   const toggleModel = (model: string) => {
